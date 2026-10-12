@@ -1,0 +1,115 @@
+name: Build MM STUDIO GDL (.dmg macOS)
+
+# Lancement manuel uniquement : onglet Actions > « Build MM STUDIO GDL » > Run workflow.
+# Produit un .dmg pour Apple Silicon (M1/M2/M3/M4) et un pour Mac Intel.
+# L'app n'est ni signée ni notarisée (pas de compte Apple Developer) :
+# au premier lancement, voir le README / les instructions « xattr ».
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build-dmg:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os: macos-latest
+            artifact-name: MM-STUDIO-GDL-macOS-AppleSilicon
+            triple: aarch64-apple-darwin
+          # macos-15-intel : seul runner Intel (x86_64) encore proposé par GitHub.
+          - os: macos-15-intel
+            artifact-name: MM-STUDIO-GDL-macOS-Intel
+            triple: x86_64-apple-darwin
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Setup Rust (stable)
+        uses: dtolnay/rust-toolchain@stable
+
+      - name: Cache Rust build artifacts
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: './src-tauri -> target'
+          shared-key: ${{ matrix.triple }}
+
+      - name: Install Python dependencies
+        run: pip install -e "." pyinstaller
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: npm ci
+
+      # TAURI_ENV_TARGET_TRIPLE est indispensable : sans lui VITE_IS_TAURI=false
+      # et les fonctions propres à l'app de bureau sont retirées du build.
+      - name: Build frontend (statique embarqué dans le service Python)
+        working-directory: frontend
+        run: npm run build
+        env:
+          TAURI_ENV_TARGET_TRIPLE: ${{ matrix.triple }}
+
+      - name: Freeze Python backend (PyInstaller onefile sidecar)
+        run: pyinstaller --clean --noconfirm openbrep-backend.spec
+
+      # Test de fumée : le service gelé doit démarrer seul et servir API + interface.
+      - name: Smoke-test frozen backend
+        run: |
+          ./dist/obr7-backend --tauri --no-open &
+          PID=$!
+          trap 'kill $PID 2>/dev/null || true' EXIT
+          for i in $(seq 1 60); do
+            curl -sf http://127.0.0.1:8765/api/snapshot > /dev/null && break
+            sleep 1
+          done
+          curl -sf http://127.0.0.1:8765/api/snapshot > /dev/null
+          curl -sf http://127.0.0.1:8765/ | grep -qi "<title\|<div id=\"root\""
+
+      - name: Stage sidecar for Tauri externalBin
+        run: |
+          set -euo pipefail
+          mkdir -p src-tauri/binaries
+          cp dist/obr7-backend "src-tauri/binaries/obr7-backend-${{ matrix.triple }}"
+          ls -la src-tauri/binaries/
+
+      # Build pur : pas de tagName/GITHUB_TOKEN, donc aucune Release n'est créée.
+      # Pas de clé de signature d'updater : createUpdaterArtifacts est à false.
+      - name: Build Tauri application
+        uses: tauri-apps/tauri-action@v0
+        env:
+          TAURI_ENV_TARGET_TRIPLE: ${{ matrix.triple }}
+        with:
+          projectPath: '.'
+          tauriScript: 'npx @tauri-apps/cli@2'
+
+      # Garde-fou : aucun secret (clé API...) ne doit se retrouver dans le .dmg.
+      - name: Secret gate on bundle
+        run: |
+          python scripts/secret_scan.py --tree frontend/dist --report text
+          python scripts/secret_scan.py --tree src-tauri/target/release/bundle --report text
+
+      - name: Upload .dmg
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.artifact-name }}
+          path: src-tauri/target/release/bundle/dmg/*.dmg
+          if-no-files-found: error
+          retention-days: 30

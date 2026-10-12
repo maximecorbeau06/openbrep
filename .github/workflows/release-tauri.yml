@@ -1,12 +1,10 @@
 name: Release Tauri Desktop
 
+# MM STUDIO : workflow d'origine (macOS + Windows + updater signé) conservé
+# pour les tests de contrat, mais SANS déclenchement automatique : il exige des
+# secrets de signature absents du fork. Utiliser build-mac-dmg.yml à la place.
 on:
   workflow_dispatch:
-  push:
-    branches:
-      - main
-    tags:
-      - 'v*'
 
 concurrency:
   group: tauri-${{ github.ref }}

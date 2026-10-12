@@ -9,10 +9,14 @@ use std::time::{Duration, Instant};
 use tauri::{Emitter, Manager, WindowEvent};
 use tauri_plugin_updater::UpdaterExt;
 
+// MM STUDIO : les mises à jour pointent vers la copie (fork) de Maxime et non
+// vers le dépôt d'origine, pour ne jamais écraser l'app par un build tiers.
+// Aucun latest.json signé n'y est publié : la vérification échoue en silence
+// côté interface, ce qui équivaut à une mise à jour automatique désactivée.
 const STABLE_UPDATE_ENDPOINT: &str =
-    "https://github.com/byewind1/openbrep/releases/latest/download/latest.json";
+    "https://github.com/maximecorbeau06/openbrep/releases/latest/download/latest.json";
 const DEVELOPMENT_UPDATE_ENDPOINT: &str =
-    "https://github.com/byewind1/openbrep/releases/download/nightly/nightly.json";
+    "https://github.com/maximecorbeau06/openbrep/releases/download/nightly/nightly.json";
 
 /// 首次启动（Gatekeeper 校验 + PyInstaller 解包 + 冷 Python import）在老
 /// Intel 机器上可能远超 60 秒；超时只兜底"进程活着但挂住"的情况，子进程
@@ -67,8 +71,10 @@ fn app_version(app: tauri::AppHandle) -> String {
 #[tauri::command]
 fn open_releases_page(channel: UpdateChannel) -> Result<(), String> {
     let url = match channel {
-        UpdateChannel::Stable => "https://github.com/byewind1/openbrep/releases/latest",
-        UpdateChannel::Development => "https://github.com/byewind1/openbrep/releases/tag/nightly",
+        UpdateChannel::Stable => "https://github.com/maximecorbeau06/openbrep/releases/latest",
+        UpdateChannel::Development => {
+            "https://github.com/maximecorbeau06/openbrep/releases/tag/nightly"
+        }
     };
     tauri_plugin_opener::open_url(
         url,
@@ -408,7 +414,7 @@ fn write_startup_error_log(app: &tauri::App, msg: &str) {
         if std::fs::create_dir_all(&dir).is_ok() {
             let _ = std::fs::write(
                 dir.join("startup-error.log"),
-                format!("OpenBrep 启动失败 / startup failure\n\n{msg}\n"),
+                format!("MM STUDIO GDL — échec du démarrage / startup failure\n\n{msg}\n"),
             );
         }
     }
@@ -452,7 +458,7 @@ fn main() {
                         "main",
                         tauri::WebviewUrl::External(url),
                     )
-                    .title("OpenBrep")
+                    .title("MM STUDIO GDL")
                     .inner_size(1400.0, 900.0)
                     .min_inner_size(900.0, 600.0)
                     .build()?;
@@ -466,7 +472,7 @@ fn main() {
                         "main",
                         tauri::WebviewUrl::App("backend-error.html".into()),
                     )
-                    .title("OpenBrep — 启动失败")
+                    .title("MM STUDIO GDL — échec du démarrage")
                     .inner_size(760.0, 560.0)
                     .build()?;
                     (win, None)

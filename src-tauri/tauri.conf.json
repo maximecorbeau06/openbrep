@@ -1,8 +1,8 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "OpenBrep",
+  "productName": "MM STUDIO GDL",
   "version": "0.13.1",
-  "identifier": "com.openbrep.app",
+  "identifier": "fr.mmstudio.gdl",
   "build": {
     "frontendDist": "../frontend/dist",
     "devUrl": "http://localhost:8766",
@@ -17,8 +17,8 @@
   },
   "bundle": {
     "active": true,
-    "targets": "all",
-    "createUpdaterArtifacts": true,
+    "targets": ["app", "dmg"],
+    "createUpdaterArtifacts": false,
     "icon": [
       "icons/32x32.png",
       "icons/64x64.png",
@@ -35,7 +35,7 @@
     "updater": {
       "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDVGNDE3QTVBRjZCRjg5NDYKUldSR2liLzJXbnBCWDNqTVJ2bnc4VHBkTFI1WTllYWF4R2RQTHZiZm5GbWFNWm92UDREaXFzM1oK",
       "endpoints": [
-        "https://github.com/byewind1/openbrep/releases/latest/download/latest.json"
+        "https://github.com/maximecorbeau06/openbrep/releases/latest/download/latest.json"
       ]
     }
   }

@@ -113,6 +113,12 @@
 - ThreadingHTTPServer 不能在请求处理线程调 `server.shutdown()`（会死锁）
 - 现有实现：先 `_send({“ok”: True})` 返回响应，再启 daemon thread 调 shutdown
 
+## Fork MM STUDIO — emballage .dmg
+- App de bureau : « MM STUDIO GDL », identifiant `fr.mmstudio.gdl`, icônes MM or sur ardoise dans `src-tauri/icons/`.
+- Build : workflow manuel `.github/workflows/build-mac-dmg.yml` (macOS Apple Silicon + Intel, sans signature Apple ni clé d'updater, `createUpdaterArtifacts=false`).
+- Mises à jour : endpoints redirigés vers `maximecorbeau06/openbrep` ; aucun `latest.json` publié = mise à jour auto inactive.
+- `release-tauri.yml` (d'origine) est conservé pour les tests de contrat mais sans déclencheur automatique.
+
 ## 版本策略
 - 0.8.x：React 工作台稳定迭代，Tauri 桌面化探索
 - 0.9.0：Streamlit 完全退役 + Tauri 桌面壳正式发布（原 1.0.0 口径已撤回，1.0 留给后续产品形态）
