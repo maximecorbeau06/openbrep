@@ -34,3 +34,11 @@ export function useT() {
   const locale = useUiPrefsStore((state) => state.locale)
   return (key: LocaleKey, vars?: Record<string, string | number>) => t(locale, key, vars)
 }
+
+/**
+ * Non-hook form of `t()`: reads the current locale at call time. For code that
+ * runs outside React components (store actions, utils, error mappers).
+ */
+export function tNow(key: LocaleKey, vars?: Record<string, string | number>): string {
+  return t(useUiPrefsStore.getState().locale, key, vars)
+}

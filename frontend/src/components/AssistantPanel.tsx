@@ -162,7 +162,7 @@ export function AssistantPanel({
         // 不清掉新项目的显示状态，也不把旧项目的错误显示到新项目。
         if (projectRef.current !== projectAtStart) return
         if (result.ok) setAdoptedReference(null)
-        else setAdoptError(result.error || '取消采用失败，请重试。')
+        else setAdoptError(result.error || t('assistant.panel.unadoptFailed'))
       }
       return
     }
@@ -173,16 +173,16 @@ export function AssistantPanel({
       // F2：单选语义以后端 replace-selection 结果为准
       setAdoptedReference({ id: result.asset.id, url: url })
     } else {
-      setAdoptError(result.error || '参考图采用失败（取图被拒绝或网络不可用）。')
+      setAdoptError(result.error || t('assistant.panel.adoptFailed'))
     }
   }
 
   async function deleteSelectedMessages() {
     if (!selectedMessages.size || !onDeleteMessages) return
     const ok = await confirm({
-      title: '删除选中的聊天记录',
-      message: `确定删除选中的 ${selectedMessages.size} 条聊天记录吗？删除后它们不会再进入后续对话。`,
-      confirmLabel: '删除',
+      title: t('assistant.panel.deleteTitle'),
+      message: t('assistant.panel.deleteMessage', { count: selectedMessages.size }),
+      confirmLabel: t('assistant.panel.deleteConfirm'),
       danger: true,
     })
     if (!ok) return
@@ -352,7 +352,7 @@ export function AssistantPanel({
   function attachPathImage(pathText: string) {
     setImageError('')
     if (attachments.length >= MAX_ASSISTANT_IMAGES) {
-      setImageError(`最多 ${MAX_ASSISTANT_IMAGES} 张图片。`)
+      setImageError(t('assistant.panel.imageMax', { max: MAX_ASSISTANT_IMAGES }))
       return
     }
     const trimmed = pathText.trim()
@@ -370,7 +370,7 @@ export function AssistantPanel({
     const room = MAX_ASSISTANT_IMAGES - attachments.length
     if (files.length > room) {
       setImageError(
-        `最多 ${MAX_ASSISTANT_IMAGES} 张图片（已有 ${attachments.length} 张，最多再添 ${room} 张）。`,
+        t('assistant.panel.imageRoom', { max: MAX_ASSISTANT_IMAGES, count: attachments.length, room }),
       )
       return
     }
@@ -454,16 +454,16 @@ export function AssistantPanel({
       <div className="panel-heading">
         <h2>AI</h2>
         <div className="assistant-heading-actions">
-          <span>{busy ? 'Working' : 'Ready'}</span>
+          <span>{busy ? t('assistant.panel.working') : t('assistant.panel.ready')}</span>
           <button type="button" disabled={messages.length === 0} onClick={() => setHistoryOpen(true)}>
-            History
+            {t('assistant.panel.history')}
           </button>
           <button type="button" disabled={busy || messages.length === 0} onClick={onClearHistory}>
-            Clear
+            {t('assistant.panel.clear')}
           </button>
           {onDeleteMessages && selectedMessages.size > 0 ? (
             <button type="button" disabled={busy} onClick={() => void deleteSelectedMessages()}>
-              Delete selected ({selectedMessages.size})
+              {t('assistant.panel.deleteSelected', { count: selectedMessages.size })}
             </button>
           ) : null}
         </div>
@@ -478,7 +478,7 @@ export function AssistantPanel({
               {onDeleteMessages ? (
                 <input
                   type="checkbox"
-                  aria-label={`选择第 ${index + 1} 条聊天记录`}
+                  aria-label={t('assistant.panel.selectMessage', { n: index + 1 })}
                   checked={selectedMessages.has(index)}
                   onChange={(event) => {
                     setSelectedMessages((current) => {
@@ -491,9 +491,9 @@ export function AssistantPanel({
                 />
               ) : null}
               <span>
-                {message.role === 'user' ? '你' : 'OpenBrep'}
+                {message.role === 'user' ? t('assistant.panel.you') : 'OpenBrep'}
                 {message.interrupted ? (
-                  <em className="assistant-error-badge assistant-interrupted">已中断</em>
+                  <em className="assistant-error-badge assistant-interrupted">{t('assistant.panel.interrupted')}</em>
                 ) : message.errorCategory ? (
                   <em className={`assistant-error-badge assistant-error-${message.errorCategory}`}>
                     {errorCategoryLabel(message.errorCategory)}
@@ -512,20 +512,20 @@ export function AssistantPanel({
               ) : (
                 <p>{message.content}</p>
               )}
-              {message.advisor && <details><summary>只读建议 · 未修改项目</summary>
+              {message.advisor && <details><summary>{t('assistant.panel.advisorSummary')}</summary>
                 {message.advisor.inspection?.checks.map((check) => <p key={check.kind}>
-                  {({ static: '静态检查', parameters: '参数声明', preview_2d: '2D预览', preview_3d: '3D预览', recent_verification: '已有验证' } as Record<string, string>)[check.kind] ?? check.kind}：
-                  {({ completed: '已检查', partial: '部分覆盖', unavailable: '不可用', not_requested: '本轮未检查' } as Record<string, string>)[check.status] ?? check.status}
+                  {({ static: t('assistant.panel.check.static'), parameters: t('assistant.panel.check.parameters'), preview_2d: t('assistant.panel.check.preview_2d'), preview_3d: t('assistant.panel.check.preview_3d'), recent_verification: t('assistant.panel.check.recent_verification') } as Record<string, string>)[check.kind] ?? check.kind}{t('assistant.panel.colon')}
+                  {({ completed: t('assistant.panel.checkStatus.completed'), partial: t('assistant.panel.checkStatus.partial'), unavailable: t('assistant.panel.checkStatus.unavailable'), not_requested: t('assistant.panel.checkStatus.not_requested') } as Record<string, string>)[check.status] ?? check.status}
                 </p>)}
                 {message.advisor.omitted_sections?.length ? (
-                  <p className="assistant-advisor-omitted">⚠️ 本轮上下文覆盖不足（未送入模型：{message.advisor.omitted_sections.join('、')}）；AI 结论可能缺少依据，具体修改请先补看相关内容。</p>
+                  <p className="assistant-advisor-omitted">{t('assistant.panel.advisorOmitted', { sections: message.advisor.omitted_sections.join(t('assistant.panel.listSep')) })}</p>
                 ) : null}
               </details>}
               {message.advisor?.proposals?.map((proposal) => <div className="plan-confirm-card" key={proposal.proposal_id}>
                 <strong>{proposal.title}</strong><p>{proposal.goal}</p>
                 {proposal.tradeoffs.map((item, i) => <p key={i}>{item}</p>)}
-                <button type="button" disabled={busy} onClick={() => onProposalAction?.(proposal.proposal_id, 'select')}>选择方案</button>
-                <button type="button" disabled={busy} onClick={() => onProposalAction?.(proposal.proposal_id, 'execute')}>执行方案</button>
+                <button type="button" disabled={busy} onClick={() => onProposalAction?.(proposal.proposal_id, 'select')}>{t('assistant.panel.selectProposal')}</button>
+                <button type="button" disabled={busy} onClick={() => onProposalAction?.(proposal.proposal_id, 'execute')}>{t('assistant.panel.executeProposal')}</button>
               </div>)}
               {message.role === 'user' && message.images?.length ? (
                 <div className="assistant-message-images">
@@ -542,7 +542,7 @@ export function AssistantPanel({
                 </div>
               ) : null}
               {message.role === 'assistant' && message.recordingFailed ? (
-                <div className="timeline-recording-failed">⚠️ 执行记录保存失败，过程可能不完整</div>
+                <div className="timeline-recording-failed">{t('assistant.panel.recordingFailed')}</div>
               ) : null}
               {message.role === 'assistant' && (message.thinkingSteps || message.staleTimeline) ? (
                 <AssistantThinkingTimeline
@@ -568,23 +568,23 @@ export function AssistantPanel({
                     disabled={busy || message.visualReviewBusy || !onReviewVisualTurn}
                     onClick={() => onReviewVisualTurn?.(message.turnTaskRef!.turn_id, Boolean(message.visualReviewRestored))}
                   >
-                    {message.visualReviewBusy ? '正在对照参考图…' : message.visualReviewRestored ? '重新对照参考图' : message.visualReview ? '重新对照参考图' : '对照参考图'}
+                    {message.visualReviewBusy ? t('assistant.panel.visualBusy') : message.visualReviewRestored || message.visualReview ? t('assistant.panel.visualAgain') : t('assistant.panel.visualCompare')}
                   </button>
                   {message.visualReviewError ? <p role="alert">{message.visualReviewError}</p> : null}
                   {message.visualReview ? (
                     <div className="assistant-visual-review-report">
-                      <strong>视觉对照候选 · {message.visualReview.status === 'partial' ? '覆盖不完整' : '完成'}</strong>
-                      {message.visualReviewRestored ? <p>这是从项目记录恢复的历史结果；如果源码已变更，请重新对照。</p> : null}
-                      <p>这是基于参考图、Plan 和当前预览的 AI 对照结果，不构成自动验收。</p>
+                      <strong>{t('assistant.panel.visualTitle')} {message.visualReview.status === 'partial' ? t('assistant.panel.visualPartial') : t('assistant.panel.visualDone')}</strong>
+                      {message.visualReviewRestored ? <p>{t('assistant.panel.visualRestored')}</p> : null}
+                      <p>{t('assistant.panel.visualDisclaimer')}</p>
                       {message.visualReview.coverage.map((item) => (
                         <p key={item.target_id}>{item.target_id}：{item.status}</p>
                       ))}
                       {message.visualReview.findings.map((finding) => (
                         <div key={finding.finding_id}>
-                          <p><b>{finding.outcome === 'fail' ? '发现差异' : finding.outcome === 'unknown' ? '无法判断' : '观察项'}</b> · {finding.summary}</p>
+                          <p><b>{finding.outcome === 'fail' ? t('assistant.panel.findingFail') : finding.outcome === 'unknown' ? t('assistant.panel.findingUnknown') : t('assistant.panel.findingNote')}</b> · {finding.summary}</p>
                           {finding.uncertainty ? <small>{finding.uncertainty}</small> : null}
                           {finding.evidence.map((evidence) => (
-                            <small key={`${finding.finding_id}-${evidence.frame_id}`}>证据：{evidence.view_id || evidence.frame_id}{evidence.note ? ` · ${evidence.note}` : ''}</small>
+                            <small key={`${finding.finding_id}-${evidence.frame_id}`}>{t('assistant.panel.evidence')}{evidence.view_id || evidence.frame_id}{evidence.note ? ` · ${evidence.note}` : ''}</small>
                           ))}
                         </div>
                       ))}
@@ -595,7 +595,7 @@ export function AssistantPanel({
 
               {message.changedFiles?.length ? (
                 <div className="assistant-change-card">
-                  <strong>Changed files</strong>
+                  <strong>{t('assistant.panel.changedFiles')}</strong>
                   <div className="assistant-change-files">
                     {message.changedFiles.map((file) => (
                       <button
@@ -616,7 +616,7 @@ export function AssistantPanel({
                       disabled={busy}
                       onClick={() => onSaveRevision(revisionMessageFor(messages, index))}
                     >
-                      Save revision
+                      {t('assistant.panel.saveRevision')}
                     </button>
                   ) : null}
                 </div>
@@ -662,7 +662,7 @@ export function AssistantPanel({
               {message.acceptance ? <AcceptanceCard acceptance={message.acceptance} /> : null}
               {message.role === 'assistant' && message.content.includes('```') ? (
                 <button type="button" disabled={busy} onClick={() => onAdoptCode(index)}>
-                  Adopt code
+                  {t('assistant.panel.adoptCode')}
                 </button>
               ) : null}
             </article>
@@ -696,11 +696,11 @@ export function AssistantPanel({
         ) : null}
       </div>
       {dialogNode}
-      <form className="assistant-input" aria-label="Assistant input" onSubmit={submitMessage} onDragOver={handleDragOver} onDrop={handleDrop}>
+      <form className="assistant-input" aria-label={t('assistant.panel.inputAria')} onSubmit={submitMessage} onDragOver={handleDragOver} onDrop={handleDrop}>
         <div className="assistant-input-wrap">
           {pickerMode === 'commands' && visibleCommands.length > 0 && (
-            <div className="slash-picker" role="listbox" aria-label="命令列表">
-              <div className="slash-picker-header">命令</div>
+            <div className="slash-picker" role="listbox" aria-label={t('assistant.panel.commandsAria')}>
+              <div className="slash-picker-header">{t('assistant.panel.commands')}</div>
               {visibleCommands.map((cmd, i) => (
                 <button
                   key={cmd.id}
@@ -711,24 +711,24 @@ export function AssistantPanel({
                   onClick={() => selectCommand(cmd.id)}
                 >
                   <span className="slash-picker-label">{cmd.label}</span>
-                  <span className="slash-picker-desc">{cmd.description}</span>
+                  <span className="slash-picker-desc">{cmd.id === 'model' ? t('assistant.panel.cmdModel') : cmd.description}</span>
                 </button>
               ))}
             </div>
           )}
           {pickerMode === 'models' && (
-            <div className="slash-picker slash-picker--models" role="listbox" aria-label="模型列表">
+            <div className="slash-picker slash-picker--models" role="listbox" aria-label={t('assistant.panel.modelsAria')}>
               <div className="slash-picker-header">
-                选择模型
-                {modelSwitching && <span className="slash-picker-loading">切换中…</span>}
+                {t('assistant.panel.chooseModel')}
+                {modelSwitching && <span className="slash-picker-loading">{t('assistant.panel.switching')}</span>}
               </div>
               {visibleModelOptions.length === 0 ? (
-                <p className="slash-picker-empty">无匹配模型</p>
+                <p className="slash-picker-empty">{t('assistant.panel.noModel')}</p>
               ) : (
                 <>
                   {customModels.length > 0 && (
                     <ModelGroup
-                      label="自定义模型"
+                      label={t('assistant.panel.customModels')}
                       options={customModels}
                       flatOffset={0}
                       currentModel={currentModel}
@@ -740,7 +740,7 @@ export function AssistantPanel({
                   )}
                   {officialModels.length > 0 && (
                     <ModelGroup
-                      label="官方模型"
+                      label={t('assistant.panel.officialModels')}
                       options={officialModels}
                       flatOffset={customModels.length}
                       currentModel={currentModel}
@@ -757,15 +757,15 @@ export function AssistantPanel({
           <textarea
             ref={textareaRef}
             rows={3}
-            aria-label="Ask or generate"
+            aria-label={t('assistant.panel.askAria')}
             placeholder={
               pickerMode === 'models'
-                ? '输入过滤…'
+                ? t('assistant.panel.filterPlaceholder')
                 : busy
-                  ? '生成中… ESC 停止'
+                  ? t('assistant.panel.busyPlaceholder')
                   : interruptedContext
-                    ? `已中断 — 输入继续，或发送"继续"重试`
-                    : '发送消息… Enter 发送  Shift+Enter 换行  / 触发命令'
+                    ? t('assistant.panel.interruptedPlaceholder')
+                    : t('assistant.panel.placeholder')
             }
             value={draft}
             disabled={modelSwitching}
@@ -795,7 +795,7 @@ export function AssistantPanel({
                   className="assistant-image-chip-remove"
                   disabled={busy}
                   aria-label={`Remove image ${img.token}`}
-                  title={`移除 ${img.token}`}
+                  title={t('assistant.panel.removeImage', { token: img.token })}
                   onClick={() => removeAttachment(img.token)}
                 >
                   ×
@@ -806,10 +806,10 @@ export function AssistantPanel({
         ) : null}
         <div className="assistant-attachment-row">
           <label className="assistant-attach-button">
-            Attach image
+            {t('assistant.panel.attachImage')}
             <input
               type="file"
-              aria-label="Attach image"
+              aria-label={t('assistant.panel.attachImage')}
               accept="image/png,image/jpeg,image/webp"
               disabled={busy}
               onChange={(event) => {
@@ -851,24 +851,24 @@ export function AssistantPanel({
               className="chat-resume-btn"
               onClick={() => { onChat('继续'); }}
             >
-              ↩ 重试上次
+              {t('assistant.panel.retry')}
             </button>
           )}
           {!legacyEntry && <button type="button" aria-pressed={planOnly} disabled={busy}
-            onClick={() => setPlanOnly(!planOnly)}>先出计划（不改项目）{planOnly ? ' ✓' : ''}</button>}
+            onClick={() => setPlanOnly(!planOnly)}>{t('assistant.panel.planOnly')}{planOnly ? ' ✓' : ''}</button>}
           {!legacyEntry && <button type="button" aria-pressed={confirmThisTurn} disabled={busy}
-            aria-label="生成前计划审批（仅当前一轮）" title="只影响当前消息；默认值在 AI 设置中显式保存"
+            aria-label={t('assistant.panel.approvalAria')} title={t('assistant.panel.approvalTitle')}
             onClick={() => setConfirmThisTurn(!confirmThisTurn)}>
-            {confirmThisTurn ? '审批后执行 ✓' : '自动执行'}
+            {confirmThisTurn ? t('assistant.panel.approveThenRun') : t('assistant.panel.autoRun')}
           </button>}
           <div className="assistant-actions">
             {busy ? (
               <button type="button" className="chat-stop-btn" onClick={onStop}>
-                ■ 停止
+                {t('assistant.panel.stop')}
               </button>
             ) : (
               <button type="submit" className="chat-send-btn" disabled={draft.trim().length === 0}>
-                发送
+                {t('assistant.panel.send')}
               </button>
             )}
           </div>
@@ -943,7 +943,7 @@ function AcceptanceCard({ acceptance }: { acceptance: ModifyAcceptance }) {
       <strong className="acceptance-title">{t('assistant.acceptance.title')}</strong>
       {acceptance.effect && acceptance.effect.status !== 'satisfied' ? (
         <p className={`acceptance-effect effect-${acceptance.effect.status}`}>
-          ❌ 目标效果（{acceptance.effect.change_kind}）未达成：{acceptance.effect.reason}
+          {t('assistant.panel.effectMissed', { kind: acceptance.effect.change_kind, reason: acceptance.effect.reason })}
         </p>
       ) : null}
       {acceptance.summary_lines?.length ? (
@@ -1256,13 +1256,13 @@ function AssistantHistoryDrawer({
 
   return (
     <>
-      <button className="history-scrim" type="button" aria-label="Close assistant history" onClick={onClose} />
-      <aside className="assistant-history-drawer" role="dialog" aria-label="Assistant history">
+      <button className="history-scrim" type="button" aria-label={t('assistant.panel.closeHistoryAria')} onClick={onClose} />
+      <aside className="assistant-history-drawer" role="dialog" aria-label={t('assistant.panel.historyAria')}>
         <div className="history-header-wrap">
           <div className="history-header">
             <div>
-              <strong>History</strong>
-              <span>{messages.length} messages</span>
+              <strong>{t('assistant.panel.history')}</strong>
+              <span>{t('assistant.panel.messageCount', { count: messages.length })}</span>
             </div>
             <div className="history-header-actions">
               <button
@@ -1288,7 +1288,7 @@ function AssistantHistoryDrawer({
                 {t('assistant.history.import')}
               </button>
               <button type="button" onClick={onClose}>
-                Close
+                {t('assistant.panel.close')}
               </button>
             </div>
           </div>
@@ -1322,7 +1322,7 @@ function AssistantHistoryDrawer({
           {messages.map((message, index) => (
             <article className={`history-message ${message.role}`} key={`${message.role}-${index}`}>
               <div className="history-message-meta">
-                <span>{message.role === 'user' ? '你' : 'OpenBrep'}</span>
+                <span>{message.role === 'user' ? t('assistant.panel.you') : 'OpenBrep'}</span>
                 <em>#{index + 1}</em>
               </div>
               <AssistantMarkdown content={message.content} />
@@ -1333,7 +1333,7 @@ function AssistantHistoryDrawer({
                   aria-label={`Adopt code from message ${index + 1}`}
                   onClick={() => onAdoptCode(index)}
                 >
-                  Adopt code
+                  {t('assistant.panel.adoptCode')}
                 </button>
               ) : null}
             </article>
@@ -1365,6 +1365,7 @@ function ModelGroup({
   modelSwitching: boolean
   onSelect: (id: string) => void
 }) {
+  const t = useT()
   return (
     <>
       <div className="slash-picker-group-label">{label}</div>
@@ -1383,7 +1384,7 @@ function ModelGroup({
           >
             <span className="slash-picker-label">{opt.label}</span>
             <span className="slash-picker-desc">{opt.provider}</span>
-            {opt.id === currentModel && <span className="slash-picker-badge">当前</span>}
+            {opt.id === currentModel && <span className="slash-picker-badge">{t('assistant.panel.current')}</span>}
           </button>
         )
       })}
@@ -1395,11 +1396,6 @@ function ModelGroup({
 // Shows the self-correcting agent's proof-oriented report: what was checked,
 // pass/fail/unknown counts, compile status, confidence, and residual risks.
 // Compact by design — detailed evidence stays in trace/revision files.
-const CONFIDENCE_LABEL: Record<string, string> = {
-  high: '高',
-  medium: '中',
-  low: '低',
-}
 const STATUS_ICON: Record<string, string> = {
   pass: '✅',
   fail: '❌',
@@ -1417,6 +1413,7 @@ function VerificationCard({
   /** ST03：delivery 表明未产生源码变化/未完成时，不显示「已修复」 */
   suppressAutoFixLabel?: boolean
 }) {
+  const t = useT()
   const compileCheck = report.checks.find((c) => c.check_type === 'compile')
   const isSkippedNoCompiler =
     compileCheck?.status === 'not_run' &&
@@ -1424,12 +1421,12 @@ function VerificationCard({
   const compileLabel = compileCheck
     ? `${STATUS_ICON[compileCheck.status] ?? '❓'} ${
         compileCheck.status === 'pass'
-          ? '编译通过'
+          ? t('assistant.verify.compilePass')
           : compileCheck.status === 'fail'
-            ? '编译失败'
+            ? t('assistant.verify.compileFail')
             : compileCheck.status === 'not_run'
-              ? isSkippedNoCompiler ? '无编译器' : '未编译'
-              : '未知'
+              ? isSkippedNoCompiler ? t('assistant.verify.noCompiler') : t('assistant.verify.notCompiled')
+              : t('assistant.verify.unknown')
       }`
     : null
   const failedChecks = report.checks.filter((c) => c.status === 'fail')
@@ -1442,13 +1439,13 @@ function VerificationCard({
   return (
     <div className={`assistant-verification ${report.passed ? 'is-pass' : 'is-fail'}`}>
       <div className="assistant-verification-header">
-        <strong>验证报告</strong>
+        <strong>{t('assistant.verify.title')}</strong>
         <em className={`assistant-verification-confidence confidence-${report.confidence}`}>
-          置信度 {CONFIDENCE_LABEL[report.confidence] ?? report.confidence}
+          {t('assistant.verify.confidence')} {({ high: t('assistant.verify.confidence.high'), medium: t('assistant.verify.confidence.medium'), low: t('assistant.verify.confidence.low') } as Record<string, string>)[report.confidence] ?? report.confidence}
         </em>
         {report.graph_powered ? (
-          <span className="assistant-verification-graph-badge" title="本次任务使用了 GDL 知识图谱约束或诊断">
-            🔌 图谱
+          <span className="assistant-verification-graph-badge" title={t('assistant.verify.graphTitle')}>
+            {t('assistant.verify.graph')}
           </span>
         ) : null}
       </div>
@@ -1461,18 +1458,18 @@ function VerificationCard({
       </div>
       {isSkippedNoCompiler ? (
         <p className="assistant-verification-no-compiler">
-          ⚠️ 未配置 LP_XMLConverter，跳过编译验证。请在设置中配置编译器路径以获得完整校验。
+          {t('assistant.verify.noCompilerHint')}
         </p>
       ) : null}
       {report.fixes_applied.length && !suppressAutoFixLabel ? (
         <p className="assistant-verification-fixes">
-          已修复：{report.fixes_applied.slice(0, 2).join('；')}
+          {t('assistant.verify.fixed')}{report.fixes_applied.slice(0, 2).join(t('assistant.verify.sep'))}
         </p>
       ) : null}
       {failedChecks.length ? (
         <ul className="assistant-verification-fails">
           {failedChecks.slice(0, 3).map((c, i) => (
-            <li key={i}>❌ {c.name}：{c.detail}</li>
+            <li key={i}>❌ {c.name}{t('assistant.panel.colon')}{c.detail}</li>
           ))}
         </ul>
       ) : null}
@@ -1485,12 +1482,12 @@ function VerificationCard({
                   type="button"
                   className="verification-line-error-link"
                   onClick={() => onRevealLine('3d.gdl', e.line_number)}
-                  title={`跳转到第 ${e.line_number} 行`}
+                  title={t('assistant.verify.jumpLine', { line: e.line_number })}
                 >
-                  第 {e.line_number} 行：{e.message}
+                  {t('assistant.verify.lineError', { line: e.line_number, message: e.message })}
                 </button>
               ) : (
-                <span>第 {e.line_number} 行：{e.message}</span>
+                <span>{t('assistant.verify.lineError', { line: e.line_number, message: e.message })}</span>
               )}
             </li>
           ))}
@@ -1498,12 +1495,12 @@ function VerificationCard({
       ) : null}
       {unknownChecks.length ? (
         <p className="assistant-verification-unknowns">
-          {unknownChecks.length} 项检查无自动化覆盖
+          {t('assistant.verify.uncovered', { count: unknownChecks.length })}
         </p>
       ) : null}
       {report.remaining_risks.length ? (
         <p className="assistant-verification-risks">
-          残余风险：{report.remaining_risks.slice(0, 2).join('；')}
+          {t('assistant.verify.risks')}{report.remaining_risks.slice(0, 2).join(t('assistant.verify.sep'))}
         </p>
       ) : null}
     </div>
