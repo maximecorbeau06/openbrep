@@ -17,9 +17,9 @@ import {
   type CopilotHistoryItem,
 } from './copilotApi'
 import './CopilotPage.css'
+import { useT, tNow } from '../../i18n'
 
-const WELCOME_MESSAGE =
-  '你好！把 Archicad 的编译报错或有问题的 GDL 代码粘进来，我帮你修。也可以直接粘贴截图或点击📎上传图片。'
+const WELCOME_MESSAGE = () => tNow('copilot.welcome')
 const MAX_IMAGES = 3
 const CLIPBOARD_POLL_MS = 3000
 const GDL_FENCE = /```gdl\s*([\s\S]*?)```/gi
@@ -82,6 +82,7 @@ async function copyTextToClipboard(text: string): Promise<boolean> {
 }
 
 function CodeBlock({ code }: { code: string }) {
+  const t = useT()
   const [copied, setCopied] = useState<'idle' | 'copied' | 'failed'>('idle')
   return (
     <div className="copilot-code">
@@ -97,13 +98,14 @@ function CodeBlock({ code }: { code: string }) {
           })
         }}
       >
-        {copied === 'copied' ? '✓ 已复制' : copied === 'failed' ? '复制失败' : '复制'}
+        {copied === 'copied' ? t('copilot.copied') : copied === 'failed' ? t('copilot.copyFailed') : t('copilot.copy')}
       </button>
     </div>
   )
 }
 
 function MessageBubble({ message }: { message: ChatMessage }) {
+  const t = useT()
   if (message.role === 'user') {
     return (
       <div className="copilot-msg-wrap copilot-msg-user">
@@ -111,7 +113,7 @@ function MessageBubble({ message }: { message: ChatMessage }) {
           {message.images && message.images.length > 0 && (
             <div className="copilot-msg-images">
               {message.images.map((img, i) => (
-                <img key={`${img.name}-${i}`} className="copilot-msg-image" src={img.dataUrl} alt={img.name || `图片${i + 1}`} />
+                <img key={`${img.name}-${i}`} className="copilot-msg-image" src={img.dataUrl} alt={img.name || t('copilot.imageN', { n: i + 1 })} />
               ))}
             </div>
           )}
@@ -157,23 +159,24 @@ function ClipboardCollector({
   onClear,
   onSummarize,
 }: ClipboardCollectorProps) {
+  const t = useT()
   return (
     <div className="copilot-collector">
       <button type="button" className={`copilot-collector-toggle${items.length ? ' has-items' : ''}`} onClick={onToggle}>
-        📋 错误收集区（{items.length}）
+        {t('copilot.collector', { count: items.length })}
       </button>
       {expanded && (
         <div className="copilot-collector-body">
           {items.length === 0 ? (
-            <div className="copilot-collector-empty">暂无捕获的错误，在 Archicad 中复制报错文本后会自动出现在这里。</div>
+            <div className="copilot-collector-empty">{t('copilot.collectorEmpty')}</div>
           ) : (
             <div className="copilot-collector-list">
               {items.map((item, i) => (
                 <div key={`${i}-${item}`} className="copilot-collector-item">
-                  <button type="button" className="copilot-chip" title="填入输入框" onClick={() => onUseItem(item)}>
+                  <button type="button" className="copilot-chip" title={t('copilot.useItem')} onClick={() => onUseItem(item)}>
                     {item}
                   </button>
-                  <button type="button" className="copilot-chip-remove" title="删除" onClick={() => onRemoveItem(i)}>
+                  <button type="button" className="copilot-chip-remove" title={t('copilot.remove')} onClick={() => onRemoveItem(i)}>
                     ✕
                   </button>
                 </div>
@@ -182,10 +185,10 @@ function ClipboardCollector({
           )}
           <div className="copilot-collector-actions">
             <button type="button" onClick={onClear} disabled={items.length === 0 || busy || summarizing}>
-              清空
+              {t('copilot.clear')}
             </button>
             <button type="button" onClick={onSummarize} disabled={items.length === 0 || busy || summarizing}>
-              {summarizing ? '总结中…' : '✨ 总结错误'}
+              {summarizing ? t('copilot.summarizing') : t('copilot.summarize')}
             </button>
           </div>
         </div>
@@ -201,13 +204,14 @@ function fileToBase64(file: File): Promise<string> {
       const result = String(reader.result || '')
       resolve(result.includes(',') ? result.split(',')[1] : '')
     }
-    reader.onerror = () => reject(new Error('读取图片失败'))
+    reader.onerror = () => reject(new Error(tNow('copilot.readImageFailed')))
     reader.readAsDataURL(file)
   })
 }
 
 export function CopilotPage() {
-  const [messages, setMessages] = useState<ChatMessage[]>([{ role: 'assistant', text: WELCOME_MESSAGE }])
+  const t = useT()
+  const [messages, setMessages] = useState<ChatMessage[]>([{ role: 'assistant', text: WELCOME_MESSAGE() }])
   const [input, setInput] = useState('')
   const [sending, setSending] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -230,18 +234,18 @@ export function CopilotPage() {
         const status = await fetchCopilotStatus()
         if (cancelled) return
         if (!status.ok) {
-          setError(status.error || 'Copilot 后端未就绪（/api/copilot/status 失败）。')
+          setError(status.error || t('copilot.notReady'))
           return
         }
         const min = status.min_addon_version
         const addonVersion = getAddonVersionFromUrl()
         if (min && addonVersion && !isVersionAtLeast(addonVersion, min)) {
           setShowUpgradeBanner(true)
-          setUpgradeText(`请升级 OpenBrep / Add-On：Copilot 面板需要 v${min} 或更高版本，当前为 v${addonVersion}。`)
+          setUpgradeText(t('copilot.upgrade', { min, current: addonVersion }))
         }
       } catch (err) {
         if (!cancelled) {
-          setError(`无法连接 Copilot 后端：${err instanceof Error ? err.message : String(err)}`)
+          setError(t('copilot.connectFailed', { error: err instanceof Error ? err.message : String(err) }))
         }
       }
     })()
@@ -274,7 +278,7 @@ export function CopilotPage() {
 
   const syncClipboardBuffer = useCallback(async (items: string[]) => {
     const resp = await clearClipboardBuffer(items)
-    if (!resp.ok) throw new Error(resp.error || '错误收集区同步失败。')
+    if (!resp.ok) throw new Error(resp.error || t('copilot.syncFailed'))
   }, [])
 
   async function handleSend(overrideText?: string) {
@@ -293,7 +297,7 @@ export function CopilotPage() {
       .map((m) => ({ role: m.role, content: m.text }))
 
     const images = imagesToSend.map((img) => ({ b64: img.b64, mime: img.mime }))
-    const userText = hasImages && !message ? '[图片]' : message
+    const userText = hasImages && !message ? t('copilot.imagePlaceholder') : message
     const userMessage: ChatMessage = {
       role: 'user',
       text: userText,
@@ -308,18 +312,18 @@ export function CopilotPage() {
 
     try {
       const resp = await sendCopilotChat({
-        message: message || '请结合这些截图分析问题并给出修复建议。',
+        message: message || t('copilot.analyzeImages'),
         history,
         images: images.length ? images : undefined,
       })
       if (!resp.ok) {
-        setError(resp.error || `请求失败（status=${resp.status ?? '?'}）`)
+        setError(resp.error || t('copilot.requestStatus', { status: String(resp.status ?? '?') }))
         return
       }
-      const reply = (resp.reply || '').trim() || '（空响应）'
+      const reply = (resp.reply || '').trim() || t('copilot.empty')
       setMessages((prev) => [...prev, { role: 'assistant', text: reply }])
     } catch (err) {
-      setError(`请求失败：${err instanceof Error ? err.message : String(err)}`)
+      setError(t('copilot.requestFailed', { error: err instanceof Error ? err.message : String(err) }))
     } finally {
       setSending(false)
       inputRef.current?.focus()
@@ -333,7 +337,7 @@ export function CopilotPage() {
     try {
       const resp = await summarizeClipboardErrors()
       if (!resp.ok) {
-        setError(resp.error || '错误总结失败。')
+        setError(resp.error || t('copilot.summaryFailed'))
         return
       }
       const summary = (resp.summary || '').trim()
@@ -343,7 +347,7 @@ export function CopilotPage() {
         await handleSend(summary)
       }
     } catch (err) {
-      setError(`错误总结失败：${err instanceof Error ? err.message : String(err)}`)
+      setError(t('copilot.summaryFailedErr', { error: err instanceof Error ? err.message : String(err) }))
     } finally {
       setSummarizing(false)
     }
@@ -355,7 +359,7 @@ export function CopilotPage() {
       await syncClipboardBuffer([])
       setClipboardItems([])
     } catch (err) {
-      setError(`清空错误收集区失败：${err instanceof Error ? err.message : String(err)}`)
+      setError(t('copilot.clearFailed', { error: err instanceof Error ? err.message : String(err) }))
     }
   }
 
@@ -366,7 +370,7 @@ export function CopilotPage() {
       await syncClipboardBuffer(next)
       setClipboardItems(next)
     } catch (err) {
-      setError(`删除错误记录失败：${err instanceof Error ? err.message : String(err)}`)
+      setError(t('copilot.removeFailed', { error: err instanceof Error ? err.message : String(err) }))
     }
   }
 
@@ -381,24 +385,24 @@ export function CopilotPage() {
     if (candidates.length === 0) return
     const slotsLeft = Math.max(0, MAX_IMAGES - attachedImages.length)
     if (slotsLeft === 0) {
-      setError('最多只能附加 3 张图片。')
+      setError(t('copilot.maxImages'))
       return
     }
     const picked = candidates.slice(0, slotsLeft)
     if (candidates.length > slotsLeft) {
-      setError('最多发送 3 张图片，已自动截断。')
+      setError(t('copilot.imagesTruncated'))
     }
     try {
       const next: { dataUrl: string; b64: string; mime: string; name: string }[] = []
       for (const file of picked) {
         const b64 = await fileToBase64(file)
         const mime = file.type || 'image/png'
-        next.push({ dataUrl: `data:${mime};base64,${b64}`, b64, mime, name: file.name || '图片' })
+        next.push({ dataUrl: `data:${mime};base64,${b64}`, b64, mime, name: file.name || t('copilot.image') })
       }
       setAttachedImages((prev) => [...prev, ...next])
       setError(null)
     } catch (err) {
-      setError(`图片加载失败：${err instanceof Error ? err.message : String(err)}`)
+      setError(t('copilot.imageLoadFailed', { error: err instanceof Error ? err.message : String(err) }))
     }
   }
 
@@ -427,20 +431,20 @@ export function CopilotPage() {
       <header className="copilot-header">
         <div className="copilot-title">
           <h1>🤖 GDL Copilot</h1>
-          <p>Archicad GDL 修复助手</p>
+          <p>{t('copilot.subtitle')}</p>
         </div>
         <button
           type="button"
           className="copilot-clear-chat"
-          title="清空对话"
+          title={t('copilot.clearChat')}
           onClick={() => {
-            setMessages([{ role: 'assistant', text: WELCOME_MESSAGE }])
-            messagesRef.current = [{ role: 'assistant', text: WELCOME_MESSAGE }]
+            setMessages([{ role: 'assistant', text: WELCOME_MESSAGE() }])
+            messagesRef.current = [{ role: 'assistant', text: WELCOME_MESSAGE() }]
             setAttachedImages([])
             setError(null)
           }}
         >
-          🗑 清空
+          {t('copilot.clearBtn')}
         </button>
       </header>
 
@@ -460,7 +464,7 @@ export function CopilotPage() {
           <MessageBubble key={`${message.role}-${i}`} message={message} />
         ))}
         {sending && (
-          <div className="copilot-loading-dots" aria-label="发送中">
+          <div className="copilot-loading-dots" aria-label={t('copilot.sending')}>
             <span className="copilot-dot" />
             <span className="copilot-dot" />
             <span className="copilot-dot" />
@@ -484,10 +488,10 @@ export function CopilotPage() {
           <div className="copilot-image-box">
             {attachedImages.map((img, i) => (
               <div key={`${img.name}-${i}`} className="copilot-image-thumb">
-                <img src={img.dataUrl} alt={img.name || `图片${i + 1}`} />
+                <img src={img.dataUrl} alt={img.name || t('copilot.imageN', { n: i + 1 })} />
                 <button
                   type="button"
-                  title="移除图片"
+                  title={t('copilot.removeImage')}
                   onClick={() => setAttachedImages((prev) => prev.filter((_, idx) => idx !== i))}
                 >
                   ✕
@@ -500,7 +504,7 @@ export function CopilotPage() {
           <textarea
             ref={inputRef}
             value={input}
-            placeholder="粘贴报错信息、代码片段，或直接粘贴截图..."
+            placeholder={t('copilot.placeholder')}
             disabled={sending}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => {
@@ -514,14 +518,14 @@ export function CopilotPage() {
             <button
               type="button"
               className="copilot-attach-btn"
-              title="选择图片"
+              title={t('copilot.chooseImage')}
               disabled={sending}
               onClick={() => fileInputRef.current?.click()}
             >
               📎
             </button>
             <button type="button" className="copilot-send-btn" disabled={sending} onClick={() => void handleSend()}>
-              发送
+              {t('copilot.send')}
             </button>
           </div>
         </div>
@@ -537,7 +541,7 @@ export function CopilotPage() {
           }}
         />
         <div className="copilot-hint">
-          <span>Enter 发送，Shift+Enter 换行，Cmd+V 可粘贴截图</span>
+          <span>{t('copilot.hint')}</span>
         </div>
       </footer>
     </div>

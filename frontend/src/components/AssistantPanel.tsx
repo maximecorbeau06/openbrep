@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback, useMemo, useEffect } from 'react'
 import type { FormEvent, KeyboardEvent } from 'react'
 import type { AssistantImageAttachment, AssistantMessage, CodexModelInfo, DeliveryPresentation, LlmModelOption, LlmSettings, ModifyAcceptance, PendingExtraction, PendingPlan, SkillProposal, VerificationReport, VisionExtraction, WorkspaceInfo } from '../api/types'
-import { detectChatIntent, isResumeMessage, INTENT_LABELS } from '../state/chatIntent'
+import { detectChatIntent, isResumeMessage } from '../state/chatIntent'
 import { attachmentLabel, isImagePathText, MAX_ASSISTANT_IMAGES, validateAssistantImageFile } from './assistantImage'
 import { AssistantMarkdown } from './AssistantMarkdownView'
 import { AssistantReferenceGallery, assistantMessageImages } from './AssistantReferenceGallery'
@@ -842,7 +842,7 @@ export function AssistantPanel({
         <div className="assistant-footer-row">
           {detectedIntent && !busy && (
             <span className={`chat-intent-badge intent-${detectedIntent}`}>
-              → {INTENT_LABELS[detectedIntent]}
+              → {t(`chatIntent.${detectedIntent}`)}
             </span>
           )}
           {interruptedContext && !busy && (
