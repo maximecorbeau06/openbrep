@@ -186,12 +186,12 @@ export function WorkspacePanel({
                   >
                     <span className="workspace-project-name">{project.name}</span>
                     {projectOriginKind(project) ? (
-                      <span className="workspace-badge" title="imported">
+                      <span className="workspace-badge" title={t('workspace.importedTitle')}>
                         {projectOriginKind(project)}
                       </span>
                     ) : null}
                     {project.artifact_count > 0 ? (
-                      <span className="workspace-badge" title="artifacts">
+                      <span className="workspace-badge" title={t('workspace.artifactsTitle')}>
                         {project.artifact_count}
                       </span>
                     ) : null}

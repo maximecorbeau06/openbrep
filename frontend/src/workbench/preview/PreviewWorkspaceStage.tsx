@@ -104,9 +104,9 @@ export function PreviewWorkspaceStage({
                     type="button"
                     className="viewport-action-button"
                     onClick={onRefreshPreview}
-                    title="Update preview from current editor buffer"
+                    title={t('preview.view.updateTitle')}
                   >
-                    Update
+                    {t('ui.update')}
                   </button>
                 ) : null
               }

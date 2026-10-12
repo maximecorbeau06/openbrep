@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useState } from 'react'
 import type { UpdateParameterRequest, WorkbenchParameter } from '../api/types'
+import { useT } from '../i18n'
 
 type EditableParameterType = NonNullable<UpdateParameterRequest['type_tag']>
 
@@ -18,6 +19,7 @@ export function ParameterMetadataEditor({
   onUpdate,
   onDelete,
 }: ParameterMetadataEditorProps) {
+  const t = useT()
   const editableParameters = useMemo(() => parameters.filter((parameter) => parameter.type_tag !== 'Title'), [parameters])
   const [selectedName, setSelectedName] = useState('')
   const selected = editableParameters.find((parameter) => parameter.name === selectedName) ?? editableParameters[0]
@@ -60,8 +62,8 @@ export function ParameterMetadataEditor({
   }
 
   return (
-    <section className="parameter-metadata-editor" aria-label="Edit parameter metadata">
-      <div className="section-label">编辑参数</div>
+    <section className="parameter-metadata-editor" aria-label={t('param.metaAria')}>
+      <div className="section-label">{t('param.editTitle')}</div>
       <div className="parameter-metadata-grid">
         <select value={selected.name} onChange={(event) => setSelectedName(event.currentTarget.value)}>
           {editableParameters.map((parameter) => (
@@ -75,7 +77,7 @@ export function ParameterMetadataEditor({
           value={newName}
           disabled={!canRetag}
           onChange={(event) => setNewName(event.currentTarget.value)}
-          aria-label="Parameter name"
+          aria-label={t('param.nameAria')}
         />
         <select
           value={typeTag}
@@ -93,7 +95,7 @@ export function ParameterMetadataEditor({
           max={typeTag === 'Boolean' ? 1 : undefined}
           value={value}
           onChange={(event) => setValue(event.currentTarget.value)}
-          aria-label="Parameter default value"
+          aria-label={t('param.defaultAria')}
         />
       </div>
       <input
@@ -101,16 +103,16 @@ export function ParameterMetadataEditor({
         type="text"
         value={description}
         onChange={(event) => setDescription(event.currentTarget.value)}
-        aria-label="Parameter description"
-        placeholder="description"
+        aria-label={t('param.descAria')}
+        placeholder={t('param.phDesc')}
       />
       <div className="parameter-metadata-actions">
         <span>{selected.is_fixed ? 'fixed' : 'editable'}</span>
         <button type="button" disabled={applying || !newName.trim()} onClick={() => void submitUpdate()}>
-          Save
+          {t('ui.save')}
         </button>
         <button type="button" disabled={applying || !canDelete} onClick={() => void submitDelete()}>
-          Delete
+          {t('ui.delete')}
         </button>
       </div>
     </section>

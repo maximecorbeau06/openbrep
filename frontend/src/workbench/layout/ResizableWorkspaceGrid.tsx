@@ -171,7 +171,7 @@ function ResizeHandle({
         type="button"
         className={`workspace-resize-handle workspace-resize-handle-${side}`}
         aria-label={`Resize ${side === 'left' ? 'left' : 'right'} workspace panel`}
-        title="Drag to resize. Double-click to reset."
+        title={t('ui.resizeTitle')}
         disabled={collapsed}
         onPointerDown={(event) => onPointerDown(side, event)}
         onDoubleClick={onDoubleClick}

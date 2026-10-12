@@ -1,5 +1,6 @@
 import { useRef } from 'react'
 import type { PointerEvent as ReactPointerEvent } from 'react'
+import { useT } from '../i18n'
 
 interface DrawerResizeHandleProps {
   height: number
@@ -12,6 +13,7 @@ interface DrawerResizeHandleProps {
  * 事件仍送达；clamp 由调用方（BottomDrawer）负责。
  */
 export function DrawerResizeHandle({ height, onHeightChange, onReset }: DrawerResizeHandleProps) {
+  const t = useT()
   const dragRef = useRef<{ startY: number; startHeight: number } | null>(null)
 
   function startDrag(event: ReactPointerEvent<HTMLDivElement>) {
@@ -39,7 +41,7 @@ export function DrawerResizeHandle({ height, onHeightChange, onReset }: DrawerRe
       className="drawer-resize-handle"
       role="separator"
       aria-orientation="horizontal"
-      title="Drag to resize. Double-click to reset."
+      title={t('ui.resizeTitle')}
       onPointerDown={startDrag}
       onPointerMove={handlePointerMove}
       onPointerUp={endDrag}

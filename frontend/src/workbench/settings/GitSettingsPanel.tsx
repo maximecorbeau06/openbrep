@@ -1,4 +1,5 @@
 import type { ProjectGitStatus } from '../../api/types'
+import { useT } from '../../i18n'
 
 interface GitSettingsPanelProps {
   gitStatus: ProjectGitStatus | null
@@ -21,10 +22,11 @@ export function GitSettingsPanel({
   onSetEnabled,
   onCommit,
 }: GitSettingsPanelProps) {
+  const t = useT()
   return (
     <>
       <label className="settings-row">
-        <span>Enabled</span>
+        <span>{t('settings.git.enabled')}</span>
         <input
           type="checkbox"
           checked={Boolean(gitStatus?.enabled)}
@@ -33,11 +35,11 @@ export function GitSettingsPanel({
         />
       </label>
       <div className="settings-metadata-grid">
-        <span>Repository</span>
+        <span>{t('settings.git.repo')}</span>
         <strong>{gitStatus?.initialized ? 'Initialized' : 'Not initialized'}</strong>
-        <span>Status</span>
+        <span>{t('settings.git.status')}</span>
         <strong>{gitStatus?.dirty ? `${gitStatus.changes.length} changes` : 'Clean'}</strong>
-        <span>Last commit</span>
+        <span>{t('settings.git.last')}</span>
         <strong>{gitStatus?.last_commit || '-'}</strong>
       </div>
       {gitStatus?.changes.length ? (
@@ -48,22 +50,22 @@ export function GitSettingsPanel({
         </div>
       ) : null}
       <label className="settings-field">
-        <span>Commit message</span>
+        <span>{t('settings.git.message')}</span>
         <input type="text" value={message} onChange={(event) => onMessageChange(event.currentTarget.value)} />
       </label>
       <div className="settings-submit-row">
         <button type="button" disabled={gitBusy || Boolean(gitStatus?.initialized)} onClick={onInitialize}>
-          Initialize Git
+          {t('settings.git.init')}
         </button>
         <button
           type="button"
           disabled={gitBusy || !gitStatus?.initialized || !gitStatus?.enabled}
           onClick={() => onCommit(message)}
         >
-          Commit
+          {t('settings.git.commit')}
         </button>
         <button type="button" disabled={gitBusy} onClick={onRefresh}>
-          Refresh
+          {t('ui.refresh')}
         </button>
       </div>
     </>

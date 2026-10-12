@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { fetchUiLayout } from '../api/client'
 import type { UIControl, UILayoutPayload, WorkbenchParameter } from '../api/types'
+import { useT } from '../i18n'
 
 interface ArchicadParamPanelProps {
   parameters: WorkbenchParameter[]
@@ -14,6 +15,7 @@ export function ArchicadParamPanel({
   draftParameters,
   onChange,
 }: ArchicadParamPanelProps) {
+  const t = useT()
   const [layout, setLayout] = useState<UILayoutPayload | null>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -34,7 +36,7 @@ export function ArchicadParamPanel({
     try {
       const result = await fetchUiLayout(draftParameters)
       if (!result.ok) {
-        setError(result.error || 'ui.gdl 解析失败')
+        setError(result.error || t('acPanel.parseFailed'))
         setLayout(null)
         return
       }
@@ -56,20 +58,20 @@ export function ArchicadParamPanel({
   const height = Math.max(layout?.height || 320, 80)
 
   if (loading && !layout) {
-    return <div className="archicad-panel-status">解析 ui.gdl…</div>
+    return <div className="archicad-panel-status">{t('acPanel.parsing')}</div>
   }
   if (error) {
     return (
       <div className="archicad-panel-status" role="alert">
         {error}
-        <button type="button" onClick={() => void load()}>重试</button>
+        <button type="button" onClick={() => void load()}>{t('acPanel.retry')}</button>
       </div>
     )
   }
   if (!infields.length) {
     return (
       <div className="archicad-panel-status">
-        <p>当前 ui.gdl 没有可渲染的参数输入控件。</p>
+        <p>{t('acPanel.empty')}</p>
         {layout?.unsupported?.length ? (
           <ul className="archicad-panel-unsupported">
             {layout.unsupported.slice(0, 4).map((item) => (
@@ -77,8 +79,8 @@ export function ArchicadParamPanel({
             ))}
           </ul>
         ) : null}
-        <p className="archicad-panel-hint">请使用「参数」页查看完整参数表。</p>
-        <button type="button" onClick={() => void load()}>重新解析</button>
+        <p className="archicad-panel-hint">{t('acPanel.useParams')}</p>
+        <button type="button" onClick={() => void load()}>{t('acPanel.reparse')}</button>
       </div>
     )
   }
@@ -113,7 +115,7 @@ export function ArchicadParamPanel({
       ) : null}
       {layout?.unsupported?.length ? (
         <div className="archicad-panel-unsupported">
-          {layout.unsupported.length} 个复杂控件未渲染，请在「参数」页编辑
+          {t('acPanel.unsupported', { count: layout.unsupported.length })}
         </div>
       ) : null}
     </div>

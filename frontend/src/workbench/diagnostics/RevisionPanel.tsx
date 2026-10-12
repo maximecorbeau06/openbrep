@@ -69,15 +69,15 @@ export function RevisionPanel({
       <div className="revision-actions">
         <input
           type="text"
-          placeholder="Revision message"
+          placeholder={t('revision.phMessage')}
           value={message}
           onChange={(event) => setMessage(event.currentTarget.value)}
         />
         <button type="button" disabled={loading} onClick={saveRevision}>
-          Save Revision
+          {t('revision.save')}
         </button>
       </div>
-      {revisions.length === 0 ? <p>暂无版本</p> : null}
+      {revisions.length === 0 ? <p>{t('revision.none')}</p> : null}
       <div className="revision-list">
         {revisions.map((revision) => (
           <article className="revision-item" key={revision.revision_id}>
@@ -90,14 +90,14 @@ export function RevisionPanel({
             </div>
             <p>{revision.message || revision.user_instruction || revision.trigger}</p>
             <footer>
-              <span>{revision.file_count} files</span>
+              <span>{t('revision.files', { count: revision.file_count })}</span>
               {revision.delivery?.run_id ? (
                 <span className="revision-delivery-run" title={revision.delivery.run_id}>
                   run {String(revision.delivery.run_id).slice(-8)}
                 </span>
               ) : null}
               <button type="button" disabled={loading} onClick={() => void restoreRevision(revision.revision_id)}>
-                Restore
+                {t('ui.restore')}
               </button>
             </footer>
           </article>

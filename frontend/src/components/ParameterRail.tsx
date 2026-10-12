@@ -68,7 +68,7 @@ export function ParameterRail({
 
   return (
     <aside className="parameter-rail">
-      <div className="rail-tabs" role="tablist" aria-label="Parameter panel views">
+      <div className="rail-tabs" role="tablist" aria-label={t('param.viewsAria')}>
         <button
           type="button"
           role="tab"
@@ -106,7 +106,7 @@ export function ParameterRail({
             </div>
             <div className="panel-actions">
               <button type="button" disabled={!dirtyCount || inputsLocked} onClick={onReset}>
-                Reset
+                {t('ui.reset')}
               </button>
               <button type="button" disabled={!dirtyCount || inputsLocked} onClick={onApply}>
                 {applying ? 'Applying' : 'Apply'}
@@ -195,6 +195,7 @@ function ParameterControl({
   onChange: (name: string, value: unknown) => void
   disabled?: boolean
 }) {
+  const t = useT()
   const label = parameter.name
   const readOnly = observation?.read_only === true
   const evidenceTitle = observation
@@ -212,7 +213,7 @@ function ParameterControl({
       {valueSummary ? (
         <span className="parameter-effective-value">
           <span>{valueSummary}</span>
-          <span className="parameter-effective-source">本地近似</span>
+          <span className="parameter-effective-source">{t('param.localApprox')}</span>
         </span>
       ) : null}
     </span>

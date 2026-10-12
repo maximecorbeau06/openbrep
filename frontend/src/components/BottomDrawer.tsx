@@ -54,13 +54,13 @@ export function BottomDrawer({
       ) : null}
       <div className="drawer-tabs">
         <button className={activeTab === 'compile' ? 'active' : ''} onClick={() => setActiveTab('compile')}>
-          Compile
+          {t('drawer.compile')}
         </button>
         <button className={activeTab === 'preview' ? 'active' : ''} onClick={() => setActiveTab('preview')}>
-          Preview
+          {t('drawer.preview')}
         </button>
         <button className={activeTab === 'revision' ? 'active' : ''} onClick={() => setActiveTab('revision')}>
-          Revision
+          {t('drawer.revision')}
         </button>
         <span className="drawer-tabs-spacer" aria-hidden="true" />
         <button
@@ -124,6 +124,7 @@ function CompileDiagnostics({
   onIssueSelect?: (issue: CompileIssue) => void
   onRevealOutput?: (path: string) => void
 }) {
+  const t = useT()
   const stackedGroups = stackGroupedIssues(issueGroups)
   const errorCount = countGroupedStackedIssues(stackedGroups, 'error')
   const warningCount = countGroupedStackedIssues(stackedGroups, 'warning')
@@ -138,14 +139,14 @@ function CompileDiagnostics({
   return (
     <>
       <div className="diagnostics-summary">
-        <strong>Compile</strong>
+        <strong>{t('drawer.compile')}</strong>
         {statusBadge ? <span className={statusBadge.className}>{statusBadge.label}</span> : null}
         <span>{duration !== null ? `${duration} ms` : 'Not compiled'}</span>
       </div>
       {!compiling && error ? <p className="diagnostic-line diagnostic-error">{error}</p> : null}
       {success && stackedGroups.length === 0 ? (
         <p className="diagnostic-pass">
-          {mode === 'mock' ? '✓ Mock 校验通过（未生成 GSM）' : '✓ 编译通过'}
+          {mode === 'mock' ? t('drawer.mockOk') : t('drawer.compileOk')}
         </p>
       ) : null}
       {stackedGroups.length ? (
@@ -157,9 +158,9 @@ function CompileDiagnostics({
       ) : null}
       {outputPath ? (
         <div className="diagnostic-output-row">
-          <span title={outputPath}>Output: {outputPath}</span>
+          <span title={outputPath}>{t('drawer.output', { path: outputPath })}</span>
           <button type="button" onClick={() => onRevealOutput?.(outputPath)}>
-            Reveal
+            {t('drawer.reveal')}
           </button>
         </div>
       ) : null}
@@ -212,7 +213,8 @@ function formatBytes(bytes: number) {
 }
 
 function PreviewLog({ warnings }: { warnings: string[] }) {
-  if (!warnings.length) return <p>No preview warnings</p>
+  const t = useT()
+  if (!warnings.length) return <p>{t('drawer.noWarnings')}</p>
   return (
     <>
       {warnings.map((warning) => (

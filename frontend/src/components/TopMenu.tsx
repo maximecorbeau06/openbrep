@@ -66,14 +66,14 @@ export function TopMenu({
   return (
     <header className="topbar">
       <div className="brand-lockup" title={project?.path ?? ''}>
-        <span className="brand-mark">OB</span>
+        <span className="brand-mark">MM</span>
         <div>
-          <strong>{project?.name ?? 'OpenBrep'}</strong>
-          <span className="brand-project-path">{project?.path ?? project?.source ?? 'workbench'}</span>
+          <strong>{project?.name ?? 'MM STUDIO'}</strong>
+          <span className="brand-project-path">{project?.path ?? project?.source ?? t('topMenu.brandSubtitle')}</span>
         </div>
       </div>
       {projectControls}
-      <nav className="menu-row" aria-label="Workbench actions">
+      <nav className="menu-row" aria-label={t('topMenu.actionsAria')}>
         <button type="button" data-testid="save-script-button" disabled={!project || saving || sourceBusy} onClick={onSave}>
           {saving ? '...' : t('topMenu.save')}
         </button>
@@ -92,7 +92,7 @@ export function TopMenu({
             {t('topMenu.build')}
           </button>
           {buildMenuOpen ? (
-            <div id="build-menu-panel" className="toolbar-menu-panel build-menu-panel" role="menu" aria-label="Build menu">
+            <div id="build-menu-panel" className="toolbar-menu-panel build-menu-panel" role="menu" aria-label={t('topMenu.buildAria')}>
               <button
                 type="button"
                 role="menuitem"

@@ -3,6 +3,7 @@ import { ScriptTree } from '../../components/ScriptTree'
 import { WorkspacePanel } from '../workspace/WorkspacePanel'
 import type { WorkspaceInfo, WorkspaceSearchHit } from '../../api/types'
 import type { AddParameterRequest, EffectiveParameterObservation, ProjectScript, UpdateParameterRequest, WorkbenchParameter } from '../../api/types'
+import { useT } from '../../i18n'
 
 interface WorkbenchLeftRailProps {
   workspace: WorkspaceInfo | null
@@ -88,6 +89,7 @@ export function WorkbenchLeftRail({
   onParamScriptChange,
   onParamScriptSave,
 }: WorkbenchLeftRailProps) {
+  const t = useT()
   return (
     <aside className="left-rail">
       <WorkspacePanel
@@ -110,10 +112,10 @@ export function WorkbenchLeftRail({
       />
       <ScriptTree scripts={scripts} activeScript={activeScriptName} dirtyScripts={dirtyScripts} onSelect={onSelectScript} />
       <ParameterRail
-        title="参数"
+        title={t('param.railTitle')}
         sections={[
-          { title: '尺寸', parameters: groupedParameters.dimensions },
-          { title: '属性', parameters: groupedParameters.properties },
+          { title: t('param.groupDimensions'), parameters: groupedParameters.dimensions },
+          { title: t('param.groupProperties'), parameters: groupedParameters.properties },
         ]}
         parameterIssues={parameterIssues}
         draftParameters={draftParameters}

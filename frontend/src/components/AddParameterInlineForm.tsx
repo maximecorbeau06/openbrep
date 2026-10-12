@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { AddParameterRequest, WorkbenchParameter } from '../api/types'
+import { useT } from '../i18n'
 
 type AuthorableParameterType = AddParameterRequest['type_tag']
 
@@ -15,6 +16,7 @@ interface AddParameterInlineFormProps {
 }
 
 export function AddParameterInlineForm({ parameters, issues, applying, onAdd, onValidate }: AddParameterInlineFormProps) {
+  const t = useT()
   const [open, setOpen] = useState(false)
   const [name, setName] = useState('')
   const [typeTag, setTypeTag] = useState<AuthorableParameterType>('Length')
@@ -26,10 +28,10 @@ export function AddParameterInlineForm({ parameters, issues, applying, onAdd, on
     return (
       <div className="parameter-authoring collapsed">
         <button type="button" className="parameter-authoring-toggle" onClick={() => setOpen(true)}>
-          + Parameter
+          {t('param.add')}
         </button>
         <button type="button" className="parameter-authoring-validate" onClick={onValidate}>
-          Validate
+          {t('ui.validate')}
         </button>
         <span className={issues.length ? 'parameter-authoring-status warning' : 'parameter-authoring-status'}>
           {issues.length ? `${issues.length} issues` : 'ok'}
@@ -79,7 +81,7 @@ export function AddParameterInlineForm({ parameters, issues, applying, onAdd, on
         <input
           className="parameter-authoring-input"
           type="text"
-          placeholder="name"
+          placeholder={t('param.phName')}
           value={name}
           onChange={(event) => setName(event.currentTarget.value)}
         />
@@ -100,7 +102,7 @@ export function AddParameterInlineForm({ parameters, issues, applying, onAdd, on
       <div className="parameter-authoring-row compact-grid two-col">
         {typeTag === 'Boolean' ? (
           <label className="parameter-authoring-boolean">
-            <span>default</span>
+            <span>{t('param.default')}</span>
             <input
               type="checkbox"
               checked={Boolean(defaultValue)}
@@ -112,7 +114,7 @@ export function AddParameterInlineForm({ parameters, issues, applying, onAdd, on
             className="parameter-authoring-input"
             type={isNumericType(typeTag) ? 'number' : 'text'}
             step={typeTag === 'Integer' ? 1 : 0.01}
-            placeholder="default"
+            placeholder={t('param.default')}
             value={String(defaultValue)}
             onChange={(event) => setDefaultValue(event.currentTarget.value)}
           />
@@ -120,7 +122,7 @@ export function AddParameterInlineForm({ parameters, issues, applying, onAdd, on
         <input
           className="parameter-authoring-input"
           type="text"
-          placeholder="description"
+          placeholder={t('param.phDesc')}
           value={description}
           onChange={(event) => setDescription(event.currentTarget.value)}
         />
@@ -131,10 +133,10 @@ export function AddParameterInlineForm({ parameters, issues, applying, onAdd, on
           {applying ? 'Adding' : 'Add'}
         </button>
         <button type="button" onClick={onValidate} disabled={applying}>
-          Validate
+          {t('ui.validate')}
         </button>
         <button type="button" onClick={() => { setOpen(false); setError(null) }} disabled={applying}>
-          Cancel
+          {t('ui.cancel')}
         </button>
       </div>
       {issues.length ? (

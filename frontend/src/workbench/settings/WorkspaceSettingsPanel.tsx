@@ -1,4 +1,5 @@
 import type { RecentProject } from '../../api/types'
+import { useT } from '../../i18n'
 
 interface WorkspaceSettingsPanelProps {
   recentProjects: RecentProject[]
@@ -13,10 +14,11 @@ export function WorkspaceSettingsPanel({
   onExportHsfProject,
   onResetCurrentProject,
 }: WorkspaceSettingsPanelProps) {
+  const t = useT()
   return (
     <>
       <div className="settings-field">
-        <span>Recent HSF projects</span>
+        <span>{t('settings.workspace.recent')}</span>
         <div className="recent-project-list">
           {recentProjects.length ? (
             recentProjects.map((project) => (
@@ -30,24 +32,24 @@ export function WorkspaceSettingsPanel({
               >
                 <span>{project.name || project.path}</span>
                 {project.parent_dir ? <small>{project.parent_dir}</small> : null}
-                {!project.exists ? <em>missing</em> : null}
+                {!project.exists ? <em>{t('settings.workspace.missing')}</em> : null}
               </button>
             ))
           ) : (
-            <span className="settings-empty">No recent HSF projects</span>
+            <span className="settings-empty">{t('settings.workspace.noRecent')}</span>
           )}
         </div>
       </div>
       <div className="settings-submit-row">
         <button type="button" onClick={onExportHsfProject}>
-          Export HSF
+          {t('settings.workspace.export')}
         </button>
         <button
           type="button"
           onClick={onResetCurrentProject}
-          title="Reset the current workbench session without deleting files on disk"
+          title={t('settings.workspace.resetTitle')}
         >
-          Reset Current Project
+          {t('settings.workspace.reset')}
         </button>
       </div>
     </>

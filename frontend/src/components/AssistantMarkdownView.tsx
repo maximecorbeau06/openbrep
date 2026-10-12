@@ -3,6 +3,7 @@ import type { ReactNode } from 'react'
 import { parseAssistantMarkdown } from './assistantMarkdownParser'
 import type { Block, InlineToken } from './assistantMarkdownParser'
 import { isSafeExternalUrl, openExternalUrl } from '../api/externalLinks'
+import { useT } from '../i18n'
 
 /**
  * P0-B：助手正文与历史视图共用的受限 Markdown 渲染器。
@@ -40,12 +41,13 @@ function LinkToken({ text, url, safe }: { text: string; url: string; safe: boole
 }
 
 function ImageCard({ alt, url, safe, onOpen }: { alt: string; url: string; safe: boolean; onOpen: (info: MarkdownImageInfo) => void }) {
+  const t = useT()
   const [status, setStatus] = useState<'loading' | 'ok' | 'failed'>(safe ? 'loading' : 'failed')
   if (!safe) {
     return (
       <figure className="assistant-ref-image is-unsafe">
         <div className="assistant-ref-image-failed">
-          不支持展示的图片地址
+          {t('refImage.unsupported')}
           <span className="assistant-ref-image-url">{url}</span>
         </div>
         {alt ? <figcaption>{alt}</figcaption> : null}
@@ -63,7 +65,7 @@ function ImageCard({ alt, url, safe, onOpen }: { alt: string; url: string; safe:
         >
           <img
             src={url}
-            alt={alt || '参考图'}
+            alt={alt || t('refImage.alt')}
             loading="lazy"
             onLoad={() => setStatus('ok')}
             onError={() => setStatus('failed')}
@@ -72,8 +74,8 @@ function ImageCard({ alt, url, safe, onOpen }: { alt: string; url: string; safe:
       ) : null}
       {status === 'failed' ? (
         <div className="assistant-ref-image-failed">
-          图片加载失败
-          <LinkToken text="打开原始链接" url={url} safe />
+          {t('refImage.loadFailed')}
+          <LinkToken text={t('refImage.openOriginal')} url={url} safe />
           <span className="assistant-ref-image-url">{url}</span>
         </div>
       ) : null}
@@ -144,9 +146,10 @@ function BlockView({ block, onOpenImage }: { block: Block; onOpenImage: (info: M
 }
 
 export function ImageLightbox({ image, onClose }: { image: MarkdownImageInfo; onClose: () => void }) {
+  const t = useT()
   return (
     <div className="assistant-md-lightbox" role="dialog" aria-modal="true" onClick={onClose}>
-      <img src={image.url} alt={image.alt || '参考图'} />
+      <img src={image.url} alt={image.alt || t('refImage.alt')} />
     </div>
   )
 }

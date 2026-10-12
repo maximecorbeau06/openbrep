@@ -452,7 +452,7 @@ export function AssistantPanel({
   return (
     <aside className="assistant-panel">
       <div className="panel-heading">
-        <h2>AI</h2>
+        <h2>{t('assistant.panel.ai')}</h2>
         <div className="assistant-heading-actions">
           <span>{busy ? t('assistant.panel.working') : t('assistant.panel.ready')}</span>
           <button type="button" disabled={messages.length === 0} onClick={() => setHistoryOpen(true)}>
@@ -1034,7 +1034,7 @@ function PlanConfirmCard({
     <div className="plan-confirm-card" role="group" aria-label={t('assistant.plan.title')}>
       <div className="plan-confirm-header">
         <strong>{t('assistant.plan.title')}</strong>
-        <span className="plan-confirm-risk">{t('assistant.plan.risk')}: {plan.risk || '无'}</span>
+        <span className="plan-confirm-risk">{t('assistant.plan.risk')}: {plan.risk || t('assistant.panel.none')}</span>
       </div>
       {plan.restored_display_only ? <p className="plan-confirm-risk">{t('assistant.plan.restoredReadOnly')}</p> : null}
       <p className="plan-confirm-intent">{plan.intent_summary}</p>
@@ -1073,7 +1073,7 @@ function PlanConfirmCard({
       ) : null}
       {(['constraints', 'assumptions', 'acceptance_criteria'] as const).map((key) => plan[key]?.length ?
         <div className="plan-confirm-section" key={key}>
-          <strong>{{ constraints: '必须遵守', assumptions: '采用的假设', acceptance_criteria: '验收条件' }[key]}</strong>
+          <strong>{{ constraints: t('assistant.panel.constraints'), assumptions: t('assistant.panel.assumptions'), acceptance_criteria: t('assistant.panel.acceptance') }[key]}</strong>
           <ul>{plan[key]!.map((item, i) => <li key={i}>{item}</li>)}</ul>
         </div> : null)}
       {plan.typed_plan || plan.object_plan ? (

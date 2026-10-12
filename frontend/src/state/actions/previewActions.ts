@@ -1,5 +1,6 @@
 import type { PreviewQuality } from '../../api/types'
 import type { PreviewSourceMode, WorkbenchActionContext } from '../workbenchStoreTypes'
+import { tNow } from '../../i18n'
 
 export function createPreviewActions({ api, get, set }: WorkbenchActionContext) {
   let authoritativeRequestSerial = 0
@@ -92,7 +93,7 @@ export function createPreviewActions({ api, get, set }: WorkbenchActionContext) 
 
     async runHostVerification() {
       if (Object.values(get().dirtyScripts).some(Boolean)) {
-        set({ hostVerificationError: '请先保存或取消脚本修改，再运行 AC 验收。' })
+        set({ hostVerificationError: tNow('preview.view.saveBeforeVerify') })
         return
       }
       const requestedProjectEpoch = get().projectEpoch
@@ -119,7 +120,7 @@ export function createPreviewActions({ api, get, set }: WorkbenchActionContext) 
       if (!result.ok || !result.verification) {
         set({
           hostVerificationLoading: false,
-          hostVerificationError: result.error ?? 'AC 验收失败。',
+          hostVerificationError: result.error ?? tNow('preview.view.verifyFailedShort'),
         })
         return
       }

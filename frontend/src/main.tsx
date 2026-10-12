@@ -5,6 +5,7 @@ import '@fontsource-variable/inter'
 import './styles/tokens.css'
 import './styles.css'
 import { useUiPrefsStore, type Locale } from './state/uiPrefsStore'
+import { tNow } from './i18n'
 
 // <html lang> suit la langue d’interface (lecteurs d’écran, césure, correcteur).
 const HTML_LANG: Record<Locale, string> = { fr: 'fr', en: 'en', zh: 'zh-CN' }
@@ -26,7 +27,7 @@ const CopilotPage = lazy(() =>
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
     {isCopilotMode ? (
-      <Suspense fallback={<div className="copilot-page-loading">加载中…</div>}>
+      <Suspense fallback={<div className="copilot-page-loading">{tNow('ui.loading')}</div>}>
         <CopilotPage />
       </Suspense>
     ) : (

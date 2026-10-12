@@ -2,6 +2,7 @@ import { lazy, Suspense, useEffect, useRef, useState } from 'react'
 import type { PreviewPayload } from '../../api/types'
 import { useWorkbenchStore } from '../../state/useWorkbenchStore'
 import { usePreviewSource } from './usePreviewSource'
+import { useT } from '../../i18n'
 
 const PreviewViewport = lazy(() => import('../../components/PreviewViewport').then((m) => ({ default: m.PreviewViewport })))
 
@@ -16,6 +17,7 @@ interface FloatingPreviewWindowProps {
 }
 
 export function FloatingPreviewWindow({ open, preview, warnings, hasDirtyScripts, onClose, onRevealSource }: FloatingPreviewWindowProps) {
+  const t = useT()
   // P1b：质量档从 store 取，不经过 props 倒灌
   const previewQuality = useWorkbenchStore((state) => state.previewQuality)
   const setPreviewQuality = useWorkbenchStore((state) => state.setPreviewQuality)
@@ -75,7 +77,7 @@ export function FloatingPreviewWindow({ open, preview, warnings, hasDirtyScripts
     <aside
       className={`floating-preview-window${fullscreen ? ' fullscreen' : ''}`}
       style={fullscreen ? undefined : { left: position.x, top: position.y }}
-      aria-label="Floating 3D preview"
+      aria-label={t('preview.view.floatAria')}
     >
       <header
         className="floating-preview-header"
@@ -90,15 +92,15 @@ export function FloatingPreviewWindow({ open, preview, warnings, hasDirtyScripts
         }}
       >
         <div className="floating-preview-title">
-          <strong>3D Preview</strong>
+          <strong>{t('preview.view.float3d')}</strong>
           <span>{fullscreen ? 'Fullscreen preview' : 'Drag header to move, resize from the corner'}</span>
         </div>
         <div className="floating-preview-actions">
           <button type="button" onClick={() => setFullscreen((value) => !value)}>
             {fullscreen ? 'Restore' : 'Fullscreen'}
           </button>
-          <button type="button" onClick={onClose} aria-label="Close floating preview">
-            Close
+          <button type="button" onClick={onClose} aria-label={t('preview.view.closeFloat')}>
+            {t('ui.close')}
           </button>
         </div>
       </header>

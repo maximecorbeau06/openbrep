@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import type { ErrorLesson, ProjectMemoryStatus, UpdateMemoryLessonRequest } from '../../api/types'
+import { useT } from '../../i18n'
 
 interface MemoryLessonsPanelProps {
   memoryStatus: ProjectMemoryStatus | null
@@ -28,6 +29,7 @@ export function MemoryLessonsPanel({
   onIgnoreLesson,
   onClear,
 }: MemoryLessonsPanelProps) {
+  const t = useT()
   const [editingFingerprint, setEditingFingerprint] = useState<string | null>(null)
   const [draft, setDraft] = useState<UpdateMemoryLessonRequest>({})
 
@@ -54,13 +56,13 @@ export function MemoryLessonsPanel({
   return (
     <div className="memory-lessons-panel">
       <div className="memory-status-grid">
-        <span>Chats</span>
+        <span>{t('settings.memory.chats')}</span>
         <strong>{memoryStatus?.chat_count ?? 0}</strong>
-        <span>Lessons</span>
+        <span>{t('settings.memory.lessons')}</span>
         <strong>{memoryStatus?.lesson_count ?? lessons.length}</strong>
-        <span>Size</span>
+        <span>{t('settings.memory.size')}</span>
         <strong>{formatBytes(memoryStatus?.total_bytes ?? 0)}</strong>
-        <span>Skill</span>
+        <span>{t('settings.memory.skill')}</span>
         <strong>{memoryStatus?.has_learned_skill ? 'Yes' : 'No'}</strong>
       </div>
       <div className="settings-path-note" title={memoryStatus?.memory_root || ''}>
@@ -68,19 +70,19 @@ export function MemoryLessonsPanel({
       </div>
       <div className="settings-submit-row memory-actions">
         <button type="button" onClick={onRefresh} disabled={busy}>
-          Refresh
+          {t('ui.refresh')}
         </button>
         <button type="button" onClick={onSummarize} disabled={busy}>
           {busy ? 'Summarizing' : 'Summarize'}
         </button>
         <button type="button" className="danger-action" onClick={onClear} disabled={busy}>
-          Clear
+          {t('ui.clear')}
         </button>
       </div>
 
-      <div className="memory-lessons-list" aria-label="Project memory lessons">
+      <div className="memory-lessons-list" aria-label={t('settings.memory.aria')}>
         {lessons.length === 0 ? (
-          <span className="settings-empty">No learned error lessons</span>
+          <span className="settings-empty">{t('settings.memory.empty')}</span>
         ) : (
           lessons.slice(0, 8).map((lesson) => (
             <article className="memory-lesson-item" key={lesson.fingerprint}>
@@ -95,7 +97,7 @@ export function MemoryLessonsPanel({
                     disabled={busy}
                     aria-label={`Edit lesson ${lesson.category}`}
                   >
-                    Edit
+                    {t('ui.edit')}
                   </button>
                   <button
                     type="button"
@@ -104,7 +106,7 @@ export function MemoryLessonsPanel({
                     disabled={busy}
                     aria-label={`Ignore lesson ${lesson.category}`}
                   >
-                    Ignore
+                    {t('ui.ignore')}
                   </button>
                   <button
                     type="button"
@@ -113,7 +115,7 @@ export function MemoryLessonsPanel({
                     disabled={busy}
                     aria-label={`Delete lesson ${lesson.category}`}
                   >
-                    Delete
+                    {t('ui.delete')}
                   </button>
                 </div>
               </div>
@@ -124,33 +126,33 @@ export function MemoryLessonsPanel({
                   <input
                     type="text"
                     value={draft.category ?? ''}
-                    placeholder="Category"
+                    placeholder={t('settings.memory.phCategory')}
                     onChange={(event) => setDraft({ ...draft, category: event.currentTarget.value })}
                   />
                   <textarea
                     value={draft.summary ?? ''}
-                    placeholder="Summary"
+                    placeholder={t('settings.memory.phSummary')}
                     rows={2}
                     onChange={(event) => setDraft({ ...draft, summary: event.currentTarget.value })}
                   />
                   <textarea
                     value={draft.guidance ?? ''}
-                    placeholder="Guidance"
+                    placeholder={t('settings.memory.phGuidance')}
                     rows={3}
                     onChange={(event) => setDraft({ ...draft, guidance: event.currentTarget.value })}
                   />
                   <textarea
                     value={draft.example ?? ''}
-                    placeholder="Example"
+                    placeholder={t('settings.memory.phExample')}
                     rows={2}
                     onChange={(event) => setDraft({ ...draft, example: event.currentTarget.value })}
                   />
                   <div className="memory-lesson-editor-actions">
                     <button type="button" onClick={() => submitEdit(lesson.fingerprint)} disabled={busy}>
-                      Save
+                      {t('ui.save')}
                     </button>
                     <button type="button" onClick={cancelEdit} disabled={busy}>
-                      Cancel
+                      {t('ui.cancel')}
                     </button>
                   </div>
                 </div>
@@ -162,7 +164,7 @@ export function MemoryLessonsPanel({
 
       {skillPreview ? (
         <details className="memory-skill-preview">
-          <summary>Skill preview</summary>
+          <summary>{t('settings.memory.skillPreview')}</summary>
           <pre>{skillPreview}</pre>
         </details>
       ) : null}

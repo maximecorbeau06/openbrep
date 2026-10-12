@@ -3,6 +3,7 @@ import { extractMarkdownImages } from './assistantMarkdownParser'
 import { ImageLightbox } from './AssistantMarkdownView'
 import type { MarkdownImageInfo } from './AssistantMarkdownView'
 import { isSafeExternalUrl, openExternalUrl } from '../api/externalLinks'
+import { useT } from '../i18n'
 
 /**
  * P0-B：可展开的参考图库区域（R6 闭环的展示半环）。
@@ -27,11 +28,12 @@ export function AssistantReferenceGallery({
   adoptedUrl: string | null
   onAdopt: (url: string | null, alt: string) => void
 }) {
+  const t = useT()
   const [lightbox, setLightbox] = useState<MarkdownImageInfo | null>(null)
   if (!images.length) return null
   return (
     <details className="assistant-reference-gallery">
-      <summary>参考图（{images.length}）· 点击展开比较 / 采用</summary>
+      <summary>{t('refImage.summary', { count: images.length })}</summary>
       <div className="assistant-reference-grid">
         {images.map((image, i) => {
           const adopted = image.url === adoptedUrl
@@ -41,13 +43,13 @@ export function AssistantReferenceGallery({
                 <button
                   type="button"
                   className="assistant-reference-thumb"
-                  title="点击放大（应用内）"
+                  title={t('refImage.zoom')}
                   onClick={() => setLightbox(image)}
                 >
-                  <img src={image.url} alt={image.alt || `参考图${i + 1}`} loading="lazy" />
+                  <img src={image.url} alt={image.alt || t('refImage.altN', { n: i + 1 })} loading="lazy" />
                 </button>
               ) : (
-                <div className="assistant-ref-image-failed">不支持展示的图片地址</div>
+                <div className="assistant-ref-image-failed">{t('refImage.unsupported')}</div>
               )}
               <figcaption>
                 <span className="assistant-reference-label">{image.alt || `图${i + 1}`}</span>
@@ -58,7 +60,7 @@ export function AssistantReferenceGallery({
                       className="assistant-reference-open"
                       onClick={() => void openExternalUrl(image.url)}
                     >
-                      浏览器打开
+                      {t('refImage.openBrowser')}
                     </button>
                   ) : null}
                   <button
@@ -67,7 +69,7 @@ export function AssistantReferenceGallery({
                     disabled={!image.safe}
                     onClick={() => onAdopt(adopted ? null : image.url, image.alt || `图${i + 1}`)}
                   >
-                    {adopted ? '✓ 已采用' : '采用'}
+                    {adopted ? t('refImage.adopted') : t('refImage.adopt')}
                   </button>
                 </span>
               </figcaption>

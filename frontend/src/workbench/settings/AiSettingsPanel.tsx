@@ -923,7 +923,7 @@ export function AiSettingsPanel({ llmSettings, onOpenConfig, onTestConnection, o
       ) : null}
       <div className="settings-submit-row">
         <button type="button" className="settings-open-config-btn" onClick={onOpenConfig}>
-          Edit config.toml ↗
+          {t('settings.ai.editConfig')}
         </button>
         <button type="button" disabled={testing} onClick={() => void handleTest()}>
           {testing ? 'Testing…' : 'Test connection'}

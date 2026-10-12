@@ -1,4 +1,5 @@
 import type { TapirStatus } from '../../api/types'
+import { useT } from '../../i18n'
 
 interface TapirPanelProps {
   status: TapirStatus | null
@@ -21,7 +22,8 @@ export function TapirPanel({
   onLoadParameters,
   onApplyParameters,
 }: TapirPanelProps) {
-  const message = status?.message ?? 'Tapir status not loaded'
+  const t = useT()
+  const message = status?.message ?? t('tapir.notLoaded')
   const selectedCount = status?.selected_guids.length ?? 0
   const parameterCount = status?.selected_params.reduce((total, row) => {
     const params = row.gdlParameters
@@ -36,15 +38,15 @@ export function TapirPanel({
           <span>{message}</span>
         </div>
         <button type="button" onClick={onRefresh} disabled={busy}>
-          Refresh
+          {t('ui.refresh')}
         </button>
       </div>
 
       <div className="tapir-status-grid">
-        <StatusItem label="Bridge" value={status?.import_ok ? 'Loaded' : 'Missing'} />
-        <StatusItem label="Archicad" value={status?.archicad_connected ? 'Connected' : 'Offline'} />
-        <StatusItem label="Tapir" value={status?.tapir_available ? 'Available' : 'Unavailable'} />
-        <StatusItem label="Selection" value={`${selectedCount}`} />
+        <StatusItem label={t('tapir.bridge')} value={status?.import_ok ? t('tapir.loaded') : t('tapir.missing')} />
+        <StatusItem label="Archicad" value={status?.archicad_connected ? t('tapir.connected') : t('tapir.offline')} />
+        <StatusItem label="Tapir" value={status?.tapir_available ? t('tapir.available') : t('tapir.unavailable')} />
+        <StatusItem label={t('tapir.selection')} value={`${selectedCount}`} />
       </div>
 
       {status?.version ? <p className="tapir-version">{status.version}</p> : null}
@@ -52,19 +54,19 @@ export function TapirPanel({
 
       <div className="tapir-action-grid">
         <button type="button" onClick={onReloadLibraries} disabled={busy || !status?.import_ok}>
-          Reload Libraries
+          {t('tapir.reload')}
         </button>
         <button type="button" onClick={onSyncSelection} disabled={busy}>
-          Read Selection
+          {t('tapir.readSel')}
         </button>
         <button type="button" onClick={onHighlightSelection} disabled={busy || selectedCount === 0}>
-          Highlight
+          {t('tapir.highlight')}
         </button>
         <button type="button" onClick={onLoadParameters} disabled={busy || selectedCount === 0}>
-          Read Params
+          {t('tapir.readParams')}
         </button>
         <button type="button" onClick={onApplyParameters} disabled={busy || parameterCount === 0}>
-          Write Params
+          {t('tapir.writeParams')}
         </button>
       </div>
 
@@ -78,10 +80,10 @@ export function TapirPanel({
           ))}
         </div>
       ) : (
-        <span className="settings-empty">No Archicad selection loaded</span>
+        <span className="settings-empty">{t('tapir.noSel')}</span>
       )}
 
-      {status?.last_sync_at ? <p className="tapir-sync">Last sync: {status.last_sync_at}</p> : null}
+      {status?.last_sync_at ? <p className="tapir-sync">{t('tapir.lastSync', { at: status.last_sync_at })}</p> : null}
     </div>
   )
 }

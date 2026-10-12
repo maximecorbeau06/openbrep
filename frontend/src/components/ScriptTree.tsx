@@ -1,4 +1,5 @@
 import type { ProjectScript } from '../api/types'
+import { useT } from '../i18n'
 
 const SCRIPT_ORDER = ['3d.gdl', '2d.gdl', '1d.gdl', 'vl.gdl', 'pr.gdl', 'ui.gdl', 'paramlist.xml', 'libpartdata.xml']
 
@@ -10,12 +11,13 @@ interface ScriptTreeProps {
 }
 
 export function ScriptTree({ scripts, activeScript, onSelect, dirtyScripts }: ScriptTreeProps) {
+  const t = useT()
   const sorted = [...scripts].sort((left, right) => SCRIPT_ORDER.indexOf(left.name) - SCRIPT_ORDER.indexOf(right.name))
 
   return (
     <section className="script-tree">
       <div className="script-tree-header">
-        <span>Scripts</span>
+        <span>{t('scripts.title')}</span>
       </div>
       <div className="script-tree-list">
         {sorted.map((script) => {
@@ -31,7 +33,7 @@ export function ScriptTree({ scripts, activeScript, onSelect, dirtyScripts }: Sc
             >
               <span className="script-tree-name">{script.name}</span>
               {isDirty ? <span className="script-tree-dirty">●</span> : null}
-              {!script.exists ? <span className="script-tree-meta">empty</span> : null}
+              {!script.exists ? <span className="script-tree-meta">{t('scripts.empty')}</span> : null}
             </button>
           )
         })}

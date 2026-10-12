@@ -2,6 +2,7 @@ import type { HostVerificationRecord, Preview2DPayload, PreviewPayload } from '.
 import type { PreviewSourceMode } from '../../state/workbenchStoreTypes'
 import type { PreviewSourceControl } from '../../components/PreviewViewport'
 import { useWorkbenchStore } from '../../state/useWorkbenchStore'
+import { tNow } from '../../i18n'
 
 /**
  * 3D 预览来源（本地近似 / Archicad 权威）：三个视口挂载点
@@ -114,13 +115,13 @@ function summarizeHostVerificationParameters(
   record: HostVerificationRecord | null,
 ): string | null {
   if (!record) return null
-  if (record.parameter_readback_status !== 'verified') return '宿主未回读有效参数'
+  if (record.parameter_readback_status !== 'verified') return tNow('preview.readback.none')
   const differences = Object.entries(record.parameter_differences ?? {})
   if (differences.length) {
     const [name, values] = differences[0]
-    const format = (value: unknown) => JSON.stringify(value) ?? '未返回'
-    const extra = differences.length > 1 ? ` 等 ${differences.length} 项` : ''
-    return `参数差异：${name} ${format(values.requested)} → ${format(values.effective)}${extra}`
+    const format = (value: unknown) => JSON.stringify(value) ?? tNow('preview.readback.missing')
+    const extra = differences.length > 1 ? tNow('preview.readback.more', { count: differences.length }) : ''
+    return tNow('preview.readback.diff', { name, requested: format(values.requested), effective: format(values.effective), extra })
   }
-  return `参数回读一致 ${Object.keys(record.effective_parameters ?? {}).length} 项`
+  return tNow('preview.readback.ok', { count: Object.keys(record.effective_parameters ?? {}).length })
 }

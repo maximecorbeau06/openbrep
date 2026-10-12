@@ -1,4 +1,5 @@
 import type { CompilerSettings } from '../../api/types'
+import { useT } from '../../i18n'
 
 interface CompilerSettingsPanelProps {
   draft: CompilerSettings
@@ -13,12 +14,13 @@ export function CompilerSettingsPanel({
   onBrowseCompilerFile,
   onBrowseOutputDirectory,
 }: CompilerSettingsPanelProps) {
+  const t = useT()
   return (
     <>
       <label className="settings-row">
-        <span>Mode</span>
+        <span>{t('settings.compiler.mode')}</span>
         <select
-          aria-label="Compiler mode"
+          aria-label={t('settings.compiler.modeAria')}
           value={draft.mode}
           onChange={(event) =>
             onChange({
@@ -27,7 +29,7 @@ export function CompilerSettingsPanel({
             })
           }
         >
-          <option value="mock">Mock</option>
+          <option value="mock">{t('settings.compiler.mock')}</option>
           <option value="lp">LP</option>
         </select>
       </label>
@@ -47,16 +49,16 @@ export function CompilerSettingsPanel({
             }
           />
           <button type="button" disabled={draft.mode !== 'lp'} onClick={onBrowseCompilerFile}>
-            Browse
+            {t('ui.browse')}
           </button>
         </div>
       </label>
       <label className="settings-field">
-        <span>Output directory</span>
+        <span>{t('settings.compiler.output')}</span>
         <div className="settings-path-row">
           <input
             type="text"
-            placeholder="Project sibling /output"
+            placeholder={t('settings.compiler.outputPh')}
             value={draft.output_dir}
             onChange={(event) =>
               onChange({
@@ -66,7 +68,7 @@ export function CompilerSettingsPanel({
             }
           />
           <button type="button" onClick={onBrowseOutputDirectory}>
-            Browse
+            {t('ui.browse')}
           </button>
         </div>
       </label>

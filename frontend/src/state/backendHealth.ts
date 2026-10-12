@@ -1,18 +1,12 @@
 import type { ApiHealthEvent } from '../api/client'
 import { probeBackend, setApiHealthListener } from '../api/client'
 import type { WorkbenchGet, WorkbenchSet } from './workbenchStoreTypes'
+import { tNow } from '../i18n'
 
 /** 后端健康看门狗：失败分型展示 + 3s 恢复轮询 + 恢复后自动清横幅。 */
 
-const BACKEND_DOWN_MESSAGE = [
-  '❌ 后端服务未运行',
-  '',
-  'OpenBrep 的 Python 后端已停止（可能是终端被关闭）。',
-  '→ 在终端运行：obr7 --daemon',
-  '→ 或检查状态：obr7 --status',
-].join('\n')
-const BACKEND_STARTING_MESSAGE = '⏳ 后端无响应（HTTP 502/504），可能正在启动中…'
-const BACKEND_TIMEOUT_MESSAGE = '⏳ 后端响应超时'
+// Textes affichés : voir les clés backend.* des dictionnaires (fr/en/zh).
+/** Référence zh conservée pour compatibilité des tests existants. */
 export const BACKEND_RECOVERED_MESSAGE = '✅ 已恢复连接'
 
 const RECOVERY_POLL_MS = 3000
@@ -53,17 +47,17 @@ export function createBackendHealth({
       // 任何请求成功都是恢复信号：清错误、给一次性"已恢复"提示
       if (get().backendError !== null) {
         stopPoll()
-        set({ backendError: null, lastError: null, backendNotice: BACKEND_RECOVERED_MESSAGE })
+        set({ backendError: null, lastError: null, backendNotice: tNow('backend.recovered') })
         dismissNoticeSoon()
       }
       return
     }
     const message =
       event.kind === 'down'
-        ? BACKEND_DOWN_MESSAGE
+        ? tNow('backend.down')
         : event.kind === 'starting'
-          ? BACKEND_STARTING_MESSAGE
-          : BACKEND_TIMEOUT_MESSAGE
+          ? tNow('backend.starting')
+          : tNow('backend.timeout')
     set({
       backendError: { kind: event.kind, at: Date.now() },
       lastError: message,

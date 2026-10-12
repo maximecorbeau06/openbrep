@@ -1,5 +1,6 @@
 import type { CompilerSettings, LlmDiscoveryRequest, LlmDiscoveryResult, LlmProviderDraft, LlmProviderWriteResult } from '../../api/types'
 import type { WorkbenchActionContext } from '../workbenchStoreTypes'
+import { tNow } from '../../i18n'
 
 export function createSettingsActions({ api, set, get }: WorkbenchActionContext) {
   function applyGitResult(result: Awaited<ReturnType<typeof api.fetchProjectGitStatus>>) {
@@ -41,7 +42,7 @@ export function createSettingsActions({ api, set, get }: WorkbenchActionContext)
       return
     }
     if (result.code === 'config_modified') {
-      set({ llmProvidersConflict: result.error ?? '配置已被外部修改，请刷新后重试（本地草稿已保留）。' })
+      set({ llmProvidersConflict: result.error ?? tNow('settings.conflictDraft') })
       return
     }
     // in_use / name_conflict / rename_not_supported 等结构化错误由 UI 内联渲染
@@ -174,7 +175,7 @@ export function createSettingsActions({ api, set, get }: WorkbenchActionContext)
       }
       if (result.code === 'config_modified') {
         // 冲突是数据态不是传输故障：保留已加载列表，UI 提示刷新
-        set({ llmProvidersConflict: result.error ?? '配置已被外部修改，请刷新后重试。', llmProvidersLoaded: true })
+        set({ llmProvidersConflict: result.error ?? tNow('settings.conflict'), llmProvidersLoaded: true })
         return
       }
       // 传输/未知失败：不清空已加载列表；无已加载数据时才写 lastError 兜底

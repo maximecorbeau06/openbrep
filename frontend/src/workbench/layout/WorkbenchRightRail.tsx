@@ -150,7 +150,7 @@ export function WorkbenchRightRail({
   const { preview: displayPreview2d, sourceControl: sourceControl2d } = usePreview2DSource(preview2d)
   return (
     <aside className="workbench-right-rail right-rail">
-      <div className="rail-tabs" role="tablist" aria-label="Right rail panels">
+      <div className="rail-tabs" role="tablist" aria-label={t('rail.rightAria')}>
         <RailTab panel="3d" activeRailPanel={activeRailPanel} onSelect={onSetActiveRailPanel}>
           3D
         </RailTab>
@@ -165,10 +165,10 @@ export function WorkbenchRightRail({
           2D
         </RailTab>
         <RailTab panel="inspect" activeRailPanel={activeRailPanel} onSelect={onSetActiveRailPanel}>
-          Inspect
+          {t('rail.inspect')}
         </RailTab>
         <RailTab panel="ai" activeRailPanel={activeRailPanel} onSelect={onSetActiveRailPanel}>
-          AI
+          {t('assistant.panel.ai')}
         </RailTab>
       </div>
       <div className="rail-panel viewport-panel">
@@ -187,8 +187,8 @@ export function WorkbenchRightRail({
               previewGhostLabel={previewGhostLabel}
               sourceControl={sourceControl}
               actions={(
-                <button type="button" className="viewport-action-button" onClick={onLoadPreview3D} title="Update preview from current editor buffer">
-                  Update
+                <button type="button" className="viewport-action-button" onClick={onLoadPreview3D} title={t('preview.view.updateTitle')}>
+                  {t('ui.update')}
                 </button>
               )}
             />
