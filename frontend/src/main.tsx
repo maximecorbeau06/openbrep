@@ -1,8 +1,16 @@
 import { lazy, StrictMode, Suspense } from 'react'
 import { createRoot } from 'react-dom/client'
 import App from './App'
+import '@fontsource-variable/inter'
 import './styles/tokens.css'
 import './styles.css'
+import { useUiPrefsStore, type Locale } from './state/uiPrefsStore'
+
+// <html lang> suit la langue d’interface (lecteurs d’écran, césure, correcteur).
+const HTML_LANG: Record<Locale, string> = { fr: 'fr', en: 'en', zh: 'zh-CN' }
+const applyHtmlLang = (locale: Locale) => { document.documentElement.lang = HTML_LANG[locale] }
+applyHtmlLang(useUiPrefsStore.getState().locale)
+useUiPrefsStore.subscribe((state) => applyHtmlLang(state.locale))
 
 // D4：`?mode=copilot` 时渲染独立 CopilotPage（Archicad 窄面板），否则渲染工作台。
 // CopilotPage 不进 workbench store，直接 fetch /api/copilot/*。

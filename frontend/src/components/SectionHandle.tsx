@@ -9,7 +9,7 @@ import { axisIndex, localCoordForT, tForLocalCoord, type SectionAxis, type Secti
 // 共存（照抄 xray 材质的 logdepthbuf 模式）。
 const handleMaterial = new ShaderMaterial({
   uniforms: {
-    uColor: { value: new Color('#f59e0b') },
+    uColor: { value: new Color('#e0a64b') },
     uAlpha: { value: 0.22 },
   },
   vertexShader: /* glsl */ `

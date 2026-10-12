@@ -262,9 +262,9 @@ export function registerGdlLanguage(monaco: Monaco) {
       { token: 'string.gdl', foreground: 'CE9178' },
     ],
     colors: {
-      'editor.background': '#0b111b',
-      'editorLineNumber.foreground': '#526070',
-      'editor.lineHighlightBackground': '#142033',
+      'editor.background': '#0e131a',
+      'editorLineNumber.foreground': '#616b79',
+      'editor.lineHighlightBackground': '#171e28',
     },
   })
   monaco.languages.registerCompletionItemProvider(GDL_LANGUAGE_ID, {
