@@ -2448,6 +2448,16 @@ button:focus-visible {
   justify-content: flex-end;
 }
 
+/* Fork MM STUDIO : boutons de mode sur une ligne, à la taille des autres contrôles. */
+.assistant-footer-row > button {
+  flex: 0 1 auto;
+  min-width: 0;
+  font-size: 12px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 .chat-intent-badge {
   font-size: 11px;
   color: var(--text-muted);
