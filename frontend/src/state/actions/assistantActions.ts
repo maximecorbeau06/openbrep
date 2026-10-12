@@ -5,6 +5,7 @@ import { detectChatIntent, isResumeMessage } from '../chatIntent'
 import { attachmentLabel } from '../../components/assistantImage'
 import { classifyAssistantError, formatAssistantRequestError, hydrateSnapshot, normalizeScriptName } from '../workbenchStoreUtils'
 import { tNow } from '../../i18n'
+import { withReplyLanguage } from '../replyLanguage'
 
 /**
  * ST04：从持久候选里挑一个可以继续审批的。rejecting 是已持久化的拒绝意图，
@@ -672,7 +673,7 @@ export function createAssistantActions({ api, get, set }: WorkbenchActionContext
       // "按图把材质改为金属，形状不变"是 material 任务，强加 geometry 门会
       // 把合法交付误判为 no_effect。显式契约字段仍由调用方按需传入。
       ...(proposal ? { proposal_id: proposal.id, proposal_action: proposal.action } : {}),
-      assistant_settings: get().llmSettings.assistant_settings,
+      assistant_settings: withReplyLanguage(get().llmSettings.assistant_settings),
       draft_scripts: Object.fromEntries(Object.entries(get().dirtyScripts).filter(([, dirty]) => dirty)
         .map(([name]) => [name, get().scriptContents[name] ?? ''])),
     }, (event) => {
@@ -745,7 +746,7 @@ export function createAssistantActions({ api, get, set }: WorkbenchActionContext
     const epoch = get().projectEpoch
     const result = await api.createProjectFromPrompt(
       trimmed,
-      get().llmSettings.assistant_settings,
+      withReplyLanguage(get().llmSettings.assistant_settings),
       images,
       signal,
       confirmedExtractions,
@@ -1128,7 +1129,7 @@ export function createAssistantActions({ api, get, set }: WorkbenchActionContext
       const epoch = get().projectEpoch
       const result = await api.generateWithAssistant(
         trimmed,
-        get().llmSettings.assistant_settings,
+        withReplyLanguage(get().llmSettings.assistant_settings),
         images,
         history,
         undefined,
@@ -1240,7 +1241,7 @@ export function createAssistantActions({ api, get, set }: WorkbenchActionContext
           await _createProject(finalMessage, images, controller.signal)
         } else if (intent === 'modify') {
           // 计划确认门（V3）：MODIFY 先出非代码语言计划，用户确认后才执行
-          const settings = get().llmSettings.assistant_settings ?? ''
+          const settings = withReplyLanguage(get().llmSettings.assistant_settings)
           const initialContent = pendingAssistantMessage('generate', images)
           const history = buildAssistantHistory(get().assistantMessages)
           set((state) => ({
@@ -1307,7 +1308,7 @@ export function createAssistantActions({ api, get, set }: WorkbenchActionContext
           )
         } else if (intent === 'debug') {
           // DEBUG 不走确认门：默认走 agent loop 流式路径，实时显示每一步事件
-          const settings = get().llmSettings.assistant_settings ?? ''
+          const settings = withReplyLanguage(get().llmSettings.assistant_settings)
           const initialContent = pendingAssistantMessage('generate', images)
           const history = buildAssistantHistory(get().assistantMessages)
           set((state) => ({
