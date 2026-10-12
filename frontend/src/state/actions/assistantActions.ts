@@ -4,6 +4,7 @@ import type { PreviewGhostLabel, WorkbenchActionContext } from '../workbenchStor
 import { detectChatIntent, isResumeMessage } from '../chatIntent'
 import { attachmentLabel } from '../../components/assistantImage'
 import { classifyAssistantError, formatAssistantRequestError, hydrateSnapshot, normalizeScriptName } from '../workbenchStoreUtils'
+import { tNow } from '../../i18n'
 
 /**
  * ST04：从持久候选里挑一个可以继续审批的。rejecting 是已持久化的拒绝意图，
@@ -34,8 +35,8 @@ const PLAN_EXECUTING_CONTENT = `${ASSISTANT_PENDING_PREFIX}\n⏳ 正在按已确
 // 提取确认门（P5d-2）的待确认内容：保留 Thinking... 前缀，让 replacePendingAssistantMessage 能替换
 const EXTRACTION_PENDING_CONTENT = `${ASSISTANT_PENDING_PREFIX}\n🖼️ 读图结果已生成，请确认或编辑后继续。`
 const EXTRACTION_EXECUTING_CONTENT = `${ASSISTANT_PENDING_PREFIX}\n⏳ 正在按已确认的读图结果生成…`
-const EXTRACTION_CANCELLED_CONTENT = '⏹ 已取消本次创建。'
-const INTERRUPTED_CONTENT = '⏹ 已中断'
+const EXTRACTION_CANCELLED_CONTENT = () => tNow('assistant.msg.extractionCancelled')
+const INTERRUPTED_CONTENT = () => tNow('assistant.msg.interrupted')
 
 /** 去掉 undefined 键，避免 toEqual/持久化时出现无意义字段 */
 function compactExtras<T extends Record<string, unknown>>(extras: T): Partial<T> {
@@ -169,8 +170,8 @@ function unlinkedDeliveryPresentation(): DeliveryPresentation {
     state: null,
     status: 'unlinked',
     unlinked: true,
-    headline: '旧记录，未关联交付版本',
-    reason: '该记录产生于 delivery_source 契约之前，或刷新后未能恢复关联；无法定位 before/after',
+    headline: tNow('assistant.msg.legacyHeadline'),
+    reason: tNow('assistant.msg.legacyReason'),
     show_success_badge: false,
     show_before_after: false,
     show_changed_files: false,
@@ -238,7 +239,7 @@ export function eventToThinkingStep(event: AssistantStreamEvent): AssistantThink
     return {
       type: 'status',
       stage: 'compile',
-      message: success ? (typeof data.message === 'string' && data.message ? data.message : '✅ 验证通过') : '❌ 验证未通过',
+      message: success ? (typeof data.message === 'string' && data.message ? data.message : tNow('assistant.msg.verifyPass')) : tNow('assistant.msg.verifyFail'),
       detail: !success && typeof data.message === 'string' ? data.message : undefined,
       ok: success,
     }
@@ -298,7 +299,7 @@ export function eventToThinkingStep(event: AssistantStreamEvent): AssistantThink
     return {
       type: 'plan',
       stage: 'plan',
-      message: 'AI 计划：' + (typeof data.intent_summary === 'string' ? data.intent_summary : '制定修改方案'),
+      message: tNow('assistant.msg.planPrefix') + (typeof data.intent_summary === 'string' ? data.intent_summary : tNow('assistant.msg.planDefault')),
       intentSummary: typeof data.intent_summary === 'string' ? data.intent_summary : undefined,
       affectedFiles: Array.isArray(data.affected_files) ? data.affected_files.filter((f): f is string => typeof f === 'string') : undefined,
       parameterChanges: Array.isArray(data.parameter_changes) ? data.parameter_changes : undefined,
@@ -312,7 +313,7 @@ export function eventToThinkingStep(event: AssistantStreamEvent): AssistantThink
     return {
       type: 'status',
       stage: 'compile',
-      message: success ? '✅ 编译通过' : '❌ 编译失败',
+      message: success ? tNow('assistant.msg.compilePass') : tNow('assistant.msg.compileFail'),
       detail: typeof data.error === 'string' && data.error ? data.error : undefined,
       ok: success,
     }
@@ -360,10 +361,10 @@ export function closeRunningSteps(steps: AssistantThinkingStep[]): AssistantThin
 
 /** 卡05 错误码 → 用户可操作文案（不跨项目盲重发） */
 export function turnErrorText(code: string | null | undefined, fallback: string): string {
-  if (code === 'PROJECT_CHANGED') return '项目状态已变化，请重新确认当前项目后重试。'
-  if (code === 'SOURCE_CHANGED') return '源码已变化，当前任务令牌已失效；请重新发起修改。'
-  if (code === 'PLAN_STALE') return '计划已过期（源码已变化），请重新生成计划。'
-  if (code === 'TURN_EXPIRED') return '任务已过期，请重新发起。'
+  if (code === 'PROJECT_CHANGED') return tNow('assistant.msg.projectChanged')
+  if (code === 'SOURCE_CHANGED') return tNow('assistant.msg.sourceChanged')
+  if (code === 'PLAN_STALE') return tNow('assistant.msg.planStale')
+  if (code === 'TURN_EXPIRED') return tNow('assistant.msg.turnExpired')
   return fallback
 }
 
@@ -398,7 +399,7 @@ export function taskEventsToThinkingSteps(events?: Array<import('../../api/types
       steps.push({
         type: 'status',
         stage: 'compile',
-        message: event.state === 'succeeded' ? (message || '✅ 验证通过') : '❌ 验证未通过',
+        message: event.state === 'succeeded' ? (message || tNow('assistant.msg.verifyPass')) : tNow('assistant.msg.verifyFail'),
         detail: message && event.state !== 'succeeded' ? message : undefined,
         ok: event.state === 'succeeded',
       })
@@ -406,7 +407,7 @@ export function taskEventsToThinkingSteps(events?: Array<import('../../api/types
     }
     if (event.kind === 'preparing') {
       if (event.stage === 'plan_gate') {
-        steps.push({ type: 'status', stage: 'plan', message: '📝 修改计划已生成，待确认。', at })
+        steps.push({ type: 'status', stage: 'plan', message: tNow('assistant.msg.planReady'), at })
       } else if (message) {
         steps.push({ type: 'status', stage: (event.stage as AssistantThinkingStep['stage']) ?? 'think', message, at })
       }
@@ -417,25 +418,25 @@ export function taskEventsToThinkingSteps(events?: Array<import('../../api/types
       continue
     }
     if (event.kind === 'delivery') {
-      steps.push({ type: 'status', stage: 'done', message: message || '已交付。', ok: true, at })
+      steps.push({ type: 'status', stage: 'done', message: message || tNow('assistant.msg.delivered'), ok: true, at })
       continue
     }
     if (event.kind === 'completed') {
       steps.push({
         type: 'status',
         stage: 'done',
-        message: event.state === 'partial' ? '⚠️ 任务部分完成' : message || '✅ 任务完成',
+        message: event.state === 'partial' ? tNow('assistant.msg.partial') : message || tNow('assistant.msg.done'),
         ok: event.state !== 'partial',
         at,
       })
       continue
     }
     if (event.kind === 'failed' || event.kind === 'cancelled') {
-      steps.push({ type: 'status', stage: 'cancel', message: message || (event.kind === 'failed' ? '❌ 任务失败' : '⏹ 已取消'), ok: false, at })
+      steps.push({ type: 'status', stage: 'cancel', message: message || (event.kind === 'failed' ? tNow('assistant.msg.failed') : tNow('assistant.msg.cancelled')), ok: false, at })
       continue
     }
     if (event.kind === 'source_changed') {
-      steps.push({ type: 'status', stage: 'cancel', message: message || '源码已变化', ok: false, at })
+      steps.push({ type: 'status', stage: 'cancel', message: message || tNow('assistant.msg.sourceChangedShort'), ok: false, at })
     }
   }
   // RF05：恢复路径同样收束——终止/中断时未返回的工具不再永远显示运行中
@@ -603,8 +604,8 @@ export function createAssistantActions({ api, get, set }: WorkbenchActionContext
       return
     }
     const reply = result.ok
-      ? result.assistant?.reply ?? '本轮未执行。'
-      : turnErrorText(result.code, result.error ?? (result.cancelled ? '⏹ 已取消本轮。' : '本轮未执行。'))
+      ? result.assistant?.reply ?? tNow('assistant.msg.notRun')
+      : turnErrorText(result.code, result.error ?? (result.cancelled ? tNow('assistant.msg.turnCancelled') : tNow('assistant.msg.notRun')))
     const refreshedPlan = result.pending_plan
       ? { ...result.pending_plan, turn_id: result.turn_id }
       : null
@@ -633,7 +634,7 @@ export function createAssistantActions({ api, get, set }: WorkbenchActionContext
     signal?: AbortSignal, approval?: PendingPlan, priorSteps: AssistantThinkingStep[] = []) {
     if (projectSwitchedSince(epoch)) return
     const saved = await get().flushDirtyScripts()
-    if (!saved.ok) throw new Error(saved.error ?? '草稿保存失败，本轮未执行。')
+    if (!saved.ok) throw new Error(saved.error ?? tNow('assistant.msg.draftSaveFailed'))
     if (projectSwitchedSince(epoch) || signal?.aborted) return
     const preview = get().preview
     set({ previewGhost: preview, previewGhostLabel: preview ? PREVIEW_GHOST_LABEL_PRE_TASK : null })
@@ -707,7 +708,7 @@ export function createAssistantActions({ api, get, set }: WorkbenchActionContext
       if (!projectSwitchedSince(epoch)) {
         set((state) => ({ assistantBusy: false,
           lastError: String(error), assistantMessages: replacePendingAssistantMessage(state.assistantMessages,
-            controller.signal.aborted ? INTERRUPTED_CONTENT : String(error),
+            controller.signal.aborted ? INTERRUPTED_CONTENT() : String(error),
             { thinkingSteps: closeRunningSteps(prepareSteps) }),
         }))
         // RF04：异常路径同样落盘（中断记录是真实对话的一部分）
@@ -788,7 +789,7 @@ export function createAssistantActions({ api, get, set }: WorkbenchActionContext
     await get().loadRevisions()
     const projectPath = result.project.path ?? ''
     const locationNote = projectPath
-      ? `\n\n📁 项目已创建：${projectPath}\n可继续发修改指令（如「把层板数改成 5」），或在编辑器里直接改脚本、参数面板里调参数。`
+      ? '\n\n' + tNow('assistant.msg.projectCreated', { path: projectPath })
       : ''
     set((state) => ({
       assistantBusy: false,
@@ -868,7 +869,7 @@ export function createAssistantActions({ api, get, set }: WorkbenchActionContext
               }
               return {
                 role: 'assistant' as const,
-                content: `⏹ 任务未完成（进程退出前中断），没有最终答复。${turn.message ? `原始目标：${turn.message}` : ''}`,
+                content: tNow('assistant.msg.unfinished') + (turn.message ? tNow('assistant.msg.originalGoal', { goal: turn.message }) : ''),
                 createdAt: Date.now(),
                 turnTaskRef: { turn_id: turn.turn_id, run_id: turn.run_id ?? null, schema_version: 1 },
                 thinkingSteps: steps.length ? steps : undefined,
@@ -950,8 +951,8 @@ export function createAssistantActions({ api, get, set }: WorkbenchActionContext
       const sourceName = result.source_name ?? sourcePath
       const note =
         imported > 0
-          ? `已从「${sourceName}」导入 ${imported} 条聊天记录（追加合并，不覆盖现有记录）`
-          : `项目「${sourceName}」没有可导入的聊天记录`
+          ? tNow('assistant.msg.historyImported', { source: sourceName, count: imported })
+          : tNow('assistant.msg.historyNothing', { source: sourceName })
       set((state) => ({
         compileLog: [note, ...state.compileLog].slice(0, 20),
       }))
@@ -1006,7 +1007,7 @@ export function createAssistantActions({ api, get, set }: WorkbenchActionContext
         const result = await api.requestVisualReview(turnId, epoch)
         if (projectSwitchedSince(epoch)) return
         if (!result.ok || !result.review) {
-          update({ visualReviewBusy: false, visualReviewError: result.error ?? '视觉对照失败。' })
+          update({ visualReviewBusy: false, visualReviewError: result.error ?? tNow('assistant.msg.visualFailed') })
           return
         }
         update({ visualReviewBusy: false, visualReview: result.review, visualReviewError: undefined, visualReviewRestored: false })
@@ -1285,7 +1286,7 @@ export function createAssistantActions({ api, get, set }: WorkbenchActionContext
                   thinkingSteps: [{
                     type: 'plan',
                     stage: 'plan',
-                    message: 'AI 计划：' + plan.intent_summary,
+                    message: tNow('assistant.msg.planPrefix') + plan.intent_summary,
                     intentSummary: plan.intent_summary,
                     affectedFiles: plan.affected_files,
                     userVisibleChanges: plan.user_visible_changes,
@@ -1400,7 +1401,7 @@ export function createAssistantActions({ api, get, set }: WorkbenchActionContext
               i === state.assistantMessages.length - 1 &&
               m.role === 'assistant' &&
               m.content.startsWith(ASSISTANT_PENDING_PREFIX)
-                ? { ...m, content: INTERRUPTED_CONTENT, interrupted: true, thinkingSteps: m.thinkingSteps }
+                ? { ...m, content: INTERRUPTED_CONTENT(), interrupted: true, thinkingSteps: m.thinkingSteps }
                 : m,
             ),
           }))
@@ -1426,18 +1427,18 @@ export function createAssistantActions({ api, get, set }: WorkbenchActionContext
       // 计划确认门（V3）：approve=true → 带已确认计划执行（SSE 接回进度流）；false → 取消
       const plan = get().pendingPlan
       if (!plan) {
-        set({ lastError: '没有待确认的修改计划，请先发起一次修改。' })
+        set({ lastError: tNow('assistant.msg.noPendingPlan') })
         return
       }
       if (plan.restored_display_only) {
         if (approve) {
-          set({ lastError: '这份历史计划没有可用的执行许可；请重新规划后再审批。' })
+          set({ lastError: tNow('assistant.msg.planNoPermit') })
           return
         }
         set((state) => ({
           pendingPlan: null,
           assistantMessages: state.assistantMessages.map((message) => message.pendingPlan?.plan_id === plan.plan_id
-            ? { ...message, pendingPlan: null, content: '⏹ 已关闭历史计划。重新规划后才能执行。' }
+            ? { ...message, pendingPlan: null, content: tNow('assistant.msg.planClosed') }
             : message),
         }))
         await persistAssistantHistory()
@@ -1471,7 +1472,7 @@ export function createAssistantActions({ api, get, set }: WorkbenchActionContext
         set((state) => ({
           pendingPlan: null,
           pendingDeliveryContinue: null,
-          assistantMessages: replacePendingAssistantMessage(state.assistantMessages, '⏹ 已取消本次修改。'),
+          assistantMessages: replacePendingAssistantMessage(state.assistantMessages, tNow('assistant.msg.modifyCancelled')),
         }))
         if (!result.ok && result.error) {
           set({ lastError: result.error })
@@ -1500,32 +1501,32 @@ export function createAssistantActions({ api, get, set }: WorkbenchActionContext
           ),
         }))
       }, undefined, history)
-      await finishModifyStream(result, epoch, '⏳ 正在按已确认的计划执行修改…', thinkingSteps)
+      await finishModifyStream(result, epoch, tNow('assistant.msg.runningPlan'), thinkingSteps)
     },
 
     async revisePendingPlan(instruction: string) {
       if (!guardSourceBusy()) return
       const plan = get().pendingPlan
       if (!plan?.turn_id || !plan.plan_id || !Number.isInteger(plan.plan_version)) {
-        set({ lastError: '当前计划不能修改，请重新生成计划。' })
+        set({ lastError: tNow('assistant.msg.planNotEditable') })
         return
       }
       const revisionInstruction = instruction.trim()
       if (!revisionInstruction) return
       if (plan.restored_display_only) {
         if (plan.original_has_images) {
-          set({ lastError: '这份计划使用过参考图；请在输入区重新附上图片，再发起审批计划。' })
+          set({ lastError: tNow('assistant.msg.planNeedsImages') })
           return
         }
         const originalRequest = plan.original_request?.trim()
         if (!originalRequest) {
-          set({ lastError: '历史计划没有可恢复的原始要求，请在输入区重新描述任务。' })
+          set({ lastError: tNow('assistant.msg.planNoRequest') })
           return
         }
         set((state) => ({
           pendingPlan: null,
           assistantMessages: state.assistantMessages.map((message) => message.pendingPlan?.plan_id === plan.plan_id
-            ? { ...message, pendingPlan: null, content: '📝 正在按修订要求重新规划…' }
+            ? { ...message, pendingPlan: null, content: tNow('assistant.msg.replanning') }
             : message),
         }))
         await persistAssistantHistory()
@@ -1558,7 +1559,7 @@ export function createAssistantActions({ api, get, set }: WorkbenchActionContext
       if (!guardSourceBusy()) return
       const pending = get().pendingExtraction
       if (!pending) {
-        set({ lastError: '没有待确认的读图结果，请先发起一次带图的创建。' })
+        set({ lastError: tNow('assistant.msg.noPendingExtraction') })
         return
       }
       if (pending.turn_id) {
@@ -1583,7 +1584,7 @@ export function createAssistantActions({ api, get, set }: WorkbenchActionContext
           pendingExtraction: null,
           assistantMessages: replacePendingAssistantMessage(
             state.assistantMessages,
-            EXTRACTION_CANCELLED_CONTENT,
+            EXTRACTION_CANCELLED_CONTENT(),
           ),
         }))
         await persistAssistantHistory()
@@ -1605,7 +1606,7 @@ export function createAssistantActions({ api, get, set }: WorkbenchActionContext
       // false → 丢弃。失败必须保留卡片与重试入口，且绝不显示成功文案。
       const proposal = get().pendingSkillProposal
       if (!proposal) {
-        set({ lastError: '没有待确认的 skill 提案。' })
+        set({ lastError: tNow('assistant.msg.noPendingSkill') })
         return
       }
       const epoch = get().projectEpoch
@@ -1616,7 +1617,7 @@ export function createAssistantActions({ api, get, set }: WorkbenchActionContext
         return
       }
       if (!result.ok) {
-        const actionLabel = effectiveApprove ? '沉淀' : '拒绝'
+        const actionLabel = effectiveApprove ? tNow('assistant.msg.skillKeep') : tNow('assistant.msg.skillReject')
         const retryable = result.retryable === true
           || result.code === undefined
           || result.code.endsWith('SAVE_FAILED')
@@ -1625,9 +1626,7 @@ export function createAssistantActions({ api, get, set }: WorkbenchActionContext
           pendingSkillProposal: state.pendingSkillProposal,
           assistantMessages: replacePendingAssistantMessage(
             state.assistantMessages,
-            `❌ skill「${proposal.name}」${actionLabel}失败：${result.error ?? '未知错误'}${
-              retryable ? '（可重试）' : ''
-            }`,
+            tNow('assistant.msg.skillFailed', { name: proposal.name, action: actionLabel, error: result.error ?? tNow('assistant.msg.unknownError') }) + (retryable ? tNow('assistant.msg.retryable') : ''),
           ),
           lastError: result.error ?? null,
         }))
@@ -1640,9 +1639,9 @@ export function createAssistantActions({ api, get, set }: WorkbenchActionContext
           state.assistantMessages,
           effectiveApprove
             ? result.verified
-              ? `✅ skill「${proposal.name}」已沉淀并通过验证（${result.gate} 门禁）`
-              : `📝 skill「${proposal.name}」已落盘为未激活产物（验证未过/含未核验断言），暂不可用`
-            : `🗑 已丢弃 skill 提案「${proposal.name}」。`,
+              ? tNow('assistant.msg.skillVerified', { name: proposal.name, gate: String(result.gate) })
+              : tNow('assistant.msg.skillInactive', { name: proposal.name })
+            : tNow('assistant.msg.skillDiscarded', { name: proposal.name }),
         ),
         lastError: null,
       }))
