@@ -1,5 +1,6 @@
 import { afterEach, describe, expect, test, vi } from 'vitest'
 import { en } from './locales/en'
+import { fr } from './locales/fr'
 import { zh } from './locales/zh'
 import { t } from './index'
 
@@ -8,6 +9,24 @@ describe('i18n dictionaries', () => {
     const zhKeys = Object.keys(zh).sort()
     const enKeys = Object.keys(en).sort()
     expect(enKeys).toEqual(zhKeys)
+  })
+
+  test('zh and fr have exactly the same key set', () => {
+    expect(Object.keys(fr).sort()).toEqual(Object.keys(zh).sort())
+  })
+
+  test('fr keeps the same {placeholders} as en for every key', () => {
+    const placeholders = (value: string) => (value.match(/\{\w+\}/g) ?? []).sort()
+    for (const [key, value] of Object.entries(en)) {
+      expect(placeholders(fr[key as keyof typeof fr]), `fr["${key}"]`).toEqual(placeholders(value))
+    }
+  })
+
+  test('every fr value is a non-empty string', () => {
+    for (const [key, value] of Object.entries(fr)) {
+      expect(typeof value, `fr["${key}"]`).toBe('string')
+      expect(value.length, `fr["${key}"] should not be empty`).toBeGreaterThan(0)
+    }
   })
 
   test('every zh value is a non-empty string', () => {
@@ -33,11 +52,13 @@ describe('t()', () => {
   test('returns the plain translation for a key with no placeholders', () => {
     expect(t('zh', 'topMenu.save')).toBe('保存')
     expect(t('en', 'topMenu.save')).toBe('Save')
+    expect(t('fr', 'topMenu.save')).toBe('Enregistrer')
   })
 
   test('fills a single {var} placeholder', () => {
     expect(t('zh', 'topMenu.status.savedAt', { time: '10:32' })).toBe('已保存 10:32')
     expect(t('en', 'topMenu.status.savedAt', { time: '10:32' })).toBe('Saved 10:32')
+    expect(t('fr', 'topMenu.status.savedAt', { time: '10:32' })).toBe('Enregistré 10:32')
   })
 
   test('fills multiple placeholders in one template', () => {

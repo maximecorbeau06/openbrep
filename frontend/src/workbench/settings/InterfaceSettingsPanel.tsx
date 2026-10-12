@@ -9,8 +9,9 @@ interface InterfaceSettingsPanelProps {
 // Language names are each language's own native name, not translated —
 // the "中文" option must read "中文" even while the UI is in English.
 const LANGUAGE_OPTIONS: Array<{ value: Locale; label: string }> = [
-  { value: 'zh', label: '中文' },
+  { value: 'fr', label: 'Français' },
   { value: 'en', label: 'English' },
+  { value: 'zh', label: '中文' },
 ]
 
 export function InterfaceSettingsPanel({ locale, onLocaleChange }: InterfaceSettingsPanelProps) {

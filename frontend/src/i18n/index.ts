@@ -1,10 +1,11 @@
 import { en } from './locales/en'
+import { fr } from './locales/fr'
 import { zh, type LocaleKey } from './locales/zh'
 import { useUiPrefsStore, type Locale } from '../state/uiPrefsStore'
 
 export type { Locale, LocaleKey }
 
-const dictionaries: Record<Locale, Record<LocaleKey, string>> = { zh, en }
+const dictionaries: Record<Locale, Record<LocaleKey, string>> = { zh, en, fr }
 
 /**
  * Translate `key` for `locale`, filling `{var}` placeholders from `vars`.
