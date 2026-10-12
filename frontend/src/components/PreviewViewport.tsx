@@ -567,13 +567,14 @@ function ViewportPresetButton({
   activePreset: PreviewViewPreset
   onSelect: (preset: PreviewViewPreset) => void
 }) {
-  const label = preset === 'iso' ? 'ISO' : preset[0].toUpperCase() + preset.slice(1)
+  const t = useT()
+  const label = ({ iso: t('preview.view.preset.iso'), top: t('preview.view.preset.top'), front: t('preview.view.preset.front'), right: t('preview.view.preset.right') } as Record<string, string>)[preset] ?? preset
   return (
     <button
       type="button"
       className={`viewport-action-button${activePreset === preset ? ' active' : ''}`}
       onClick={() => onSelect(preset)}
-      title={`Set ${label} view`}
+      title={t('preview.view.setView', { view: label })}
     >
       {label}
     </button>

@@ -93,7 +93,7 @@ export function FloatingPreviewWindow({ open, preview, warnings, hasDirtyScripts
       >
         <div className="floating-preview-title">
           <strong>{t('preview.view.float3d')}</strong>
-          <span>{fullscreen ? 'Fullscreen preview' : 'Drag header to move, resize from the corner'}</span>
+          <span>{fullscreen ? t('preview.view.fullscreen') : t('preview.view.dragHint')}</span>
         </div>
         <div className="floating-preview-actions">
           <button type="button" onClick={() => setFullscreen((value) => !value)}>

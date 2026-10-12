@@ -141,7 +141,7 @@ function CompileDiagnostics({
       <div className="diagnostics-summary">
         <strong>{t('drawer.compile')}</strong>
         {statusBadge ? <span className={statusBadge.className}>{statusBadge.label}</span> : null}
-        <span>{duration !== null ? `${duration} ms` : 'Not compiled'}</span>
+        <span>{duration !== null ? `${duration} ms` : t('drawer.notCompiled')}</span>
       </div>
       {!compiling && error ? <p className="diagnostic-line diagnostic-error">{error}</p> : null}
       {success && stackedGroups.length === 0 ? (
@@ -166,9 +166,9 @@ function CompileDiagnostics({
       ) : null}
       {sizeBytes !== null || parameterCount !== null ? (
         <p>
-          {sizeBytes !== null ? `Size: ${formatBytes(sizeBytes)}` : ''}
+          {sizeBytes !== null ? t('drawer.size', { size: formatBytes(sizeBytes) }) : ''}
           {sizeBytes !== null && parameterCount !== null ? ' · ' : ''}
-          {parameterCount !== null ? `Parameters: ${parameterCount}` : ''}
+          {parameterCount !== null ? t('drawer.parameters', { count: parameterCount }) : ''}
         </p>
       ) : null}
       {stackedGroups.map((group) => (

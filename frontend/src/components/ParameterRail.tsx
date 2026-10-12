@@ -102,14 +102,14 @@ export function ParameterRail({
           <div className="panel-heading">
             <div>
               <h2>{title}</h2>
-              <span>{dirtyCount ? `${dirtyCount} changed / ${count}` : `${count}`}</span>
+              <span>{dirtyCount ? t('param.changedOf', { changed: dirtyCount, count }) : `${count}`}</span>
             </div>
             <div className="panel-actions">
               <button type="button" disabled={!dirtyCount || inputsLocked} onClick={onReset}>
                 {t('ui.reset')}
               </button>
               <button type="button" disabled={!dirtyCount || inputsLocked} onClick={onApply}>
-                {applying ? 'Applying' : 'Apply'}
+                {applying ? t('param.applying') : t('param.apply')}
               </button>
             </div>
           </div>

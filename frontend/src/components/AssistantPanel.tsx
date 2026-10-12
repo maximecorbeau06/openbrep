@@ -821,7 +821,7 @@ export function AssistantPanel({
           {attachments.length ? (
             <span className="assistant-attach-count">{attachments.length}/{MAX_ASSISTANT_IMAGES}</span>
           ) : (
-            <span>{'Paste, drop, or type a local image path'}</span>
+            <span>{t('assistant.panel.attachHint')}</span>
           )}
           {imageError ? <span className="assistant-attach-error">{imageError}</span> : null}
           {adoptError ? <span className="assistant-attach-error">{adoptError}</span> : null}

@@ -29,7 +29,7 @@ export function KnowledgePanel({ status, busy, onRefresh, onReload }: KnowledgeP
           disabled={busy}
           onClick={onReload}
         >
-          {busy ? 'Reloading…' : 'Reload KB'}
+          {busy ? t('settings.knowledge.reloading') : t('settings.knowledge.reload')}
         </button>
       </div>
 

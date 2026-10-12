@@ -34,7 +34,7 @@ export function AddParameterInlineForm({ parameters, issues, applying, onAdd, on
           {t('ui.validate')}
         </button>
         <span className={issues.length ? 'parameter-authoring-status warning' : 'parameter-authoring-status'}>
-          {issues.length ? `${issues.length} issues` : 'ok'}
+          {issues.length ? t('param.issues', { count: issues.length }) : t('param.ok')}
         </span>
       </div>
     )

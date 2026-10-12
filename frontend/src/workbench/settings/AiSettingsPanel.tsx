@@ -926,14 +926,14 @@ export function AiSettingsPanel({ llmSettings, onOpenConfig, onTestConnection, o
           {t('settings.ai.editConfig')}
         </button>
         <button type="button" disabled={testing} onClick={() => void handleTest()}>
-          {testing ? 'Testing…' : 'Test connection'}
+          {testing ? t('settings.ai.testing') : t('settings.ai.testConnection')}
         </button>
       </div>
       <p className="settings-test-result">{t('settings.ai.officialBaseNote')}</p>
       {testResult ? (
         testResult.ok ? (
           <p className="settings-test-result success">
-            {`${testResult.message ?? 'LLM connection OK'}${testResult.duration_ms !== undefined ? ` (${testResult.duration_ms} ms)` : ''}`}
+            {`${testResult.message ?? t('settings.ai.connectionOk')}${testResult.duration_ms !== undefined ? ` (${testResult.duration_ms} ms)` : ''}`}
           </p>
         ) : (
           <div className="settings-test-error-block" data-testid="llm-test-error">

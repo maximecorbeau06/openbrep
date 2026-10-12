@@ -1069,5 +1069,31 @@ export const fr: Record<LocaleKey, string> = {
   'chatIntent.create': 'Nouvel objet',
   'chatIntent.modify': 'Modifier l’objet',
   'chatIntent.debug': 'Diagnostic',
+  // ── Derniers textes anglais visibles (fork MM STUDIO) ──
+  'param.issues': '{count} problèmes',
+  'param.ok': 'ok',
+  'assistant.panel.attachHint': 'Collez, déposez ou saisissez le chemin d’une image locale',
+  'drawer.notCompiled': 'Non compilé',
+  'drawer.size': 'Taille : {size}',
+  'drawer.parameters': 'Paramètres : {count}',
+  'param.changedOf': '{changed} modifiés / {count}',
+  'param.applying': 'Application…',
+  'param.apply': 'Appliquer',
+  'preview.view.fullscreen': 'Aperçu plein écran',
+  'preview.view.dragHint': 'Faites glisser l’en-tête pour déplacer, redimensionnez par le coin',
+  'settings.ai.connectionOk': 'Connexion au modèle OK',
+  'settings.git.changes': '{count} modifications',
+  'settings.git.clean': 'Propre',
+  'settings.knowledge.reloading': 'Rechargement…',
+  'settings.knowledge.reload': 'Recharger la base',
+  'preview.view.setView': 'Vue {view}',
+  // ── Vues prédéfinies ──
+  'preview.view.preset.iso': 'ISO',
+  'preview.view.preset.top': 'Dessus',
+  'preview.view.preset.front': 'Face',
+  'preview.view.preset.right': 'Droite',
+  // ── Test de connexion (réglages IA) ──
+  'settings.ai.testConnection': 'Tester la connexion',
+  'settings.ai.testing': 'Test en cours…',
 
 }

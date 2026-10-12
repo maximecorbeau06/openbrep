@@ -1066,5 +1066,31 @@ export const en: Record<LocaleKey, string> = {
   'chatIntent.create': 'New object',
   'chatIntent.modify': 'Edit object',
   'chatIntent.debug': 'Troubleshoot',
+  // ── Derniers textes anglais visibles (fork MM STUDIO) ──
+  'param.issues': '{count} issues',
+  'param.ok': 'ok',
+  'assistant.panel.attachHint': 'Paste, drop, or type a local image path',
+  'drawer.notCompiled': 'Not compiled',
+  'drawer.size': 'Size: {size}',
+  'drawer.parameters': 'Parameters: {count}',
+  'param.changedOf': '{changed} changed / {count}',
+  'param.applying': 'Applying',
+  'param.apply': 'Apply',
+  'preview.view.fullscreen': 'Fullscreen preview',
+  'preview.view.dragHint': 'Drag header to move, resize from the corner',
+  'settings.ai.connectionOk': 'LLM connection OK',
+  'settings.git.changes': '{count} changes',
+  'settings.git.clean': 'Clean',
+  'settings.knowledge.reloading': 'Reloading…',
+  'settings.knowledge.reload': 'Reload KB',
+  'preview.view.setView': 'Set {view} view',
+  // ── Vues prédéfinies ──
+  'preview.view.preset.iso': 'ISO',
+  'preview.view.preset.top': 'Top',
+  'preview.view.preset.front': 'Front',
+  'preview.view.preset.right': 'Right',
+  // ── Test de connexion (réglages IA) ──
+  'settings.ai.testConnection': 'Test connection',
+  'settings.ai.testing': 'Testing…',
 
 }

@@ -38,7 +38,7 @@ export function GitSettingsPanel({
         <span>{t('settings.git.repo')}</span>
         <strong>{gitStatus?.initialized ? 'Initialized' : 'Not initialized'}</strong>
         <span>{t('settings.git.status')}</span>
-        <strong>{gitStatus?.dirty ? `${gitStatus.changes.length} changes` : 'Clean'}</strong>
+        <strong>{gitStatus?.dirty ? t('settings.git.changes', { count: gitStatus.changes.length }) : t('settings.git.clean')}</strong>
         <span>{t('settings.git.last')}</span>
         <strong>{gitStatus?.last_commit || '-'}</strong>
       </div>
