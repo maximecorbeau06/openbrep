@@ -12,7 +12,11 @@ vi.mock('../state/useWorkbenchStore', () => ({
 }))
 
 vi.mock('../state/uiPrefsStore', () => ({
-  useUiPrefsStore: (selector: (state: { locale: string }) => unknown) => selector({ locale: 'zh' }),
+  // Hook + getState() : tNow() (fork MM STUDIO) lit la langue hors composants.
+  useUiPrefsStore: Object.assign(
+    (selector: (state: { locale: string }) => unknown) => selector({ locale: 'zh' }),
+    { getState: () => ({ locale: 'zh' }), setState: () => undefined },
+  ),
 }))
 
 vi.mock('./layout/ResizableWorkspaceGrid', () => ({
