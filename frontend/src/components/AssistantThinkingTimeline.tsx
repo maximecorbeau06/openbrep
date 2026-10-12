@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { AssistantThinkingStep, ThinkingStage } from '../api/types'
+import { useT, tNow } from '../i18n'
 
 interface AssistantThinkingTimelineProps {
   steps: AssistantThinkingStep[]
@@ -26,20 +27,20 @@ const STAGE_ICON: Record<ThinkingStage, string> = {
   done: '✅',
 }
 
-const STAGE_LABEL: Record<ThinkingStage, string> = {
-  understand: '理解意图',
-  think: '思考',
-  locate: '定位',
-  plan: '制定方案',
-  modify: '修改',
-  compile: '编译验证',
-  preview: '预览核对',
-  verify: '完成检查',
-  retry: '继续修复',
-  budget: '预算耗尽',
-  cancel: '已取消',
-  done: '完成',
-}
+const STAGE_LABEL = (): Record<ThinkingStage, string> => ({
+  understand: tNow('timeline.stage.understand'),
+  think: tNow('timeline.stage.think'),
+  locate: tNow('timeline.stage.locate'),
+  plan: tNow('timeline.stage.plan'),
+  modify: tNow('timeline.stage.modify'),
+  compile: tNow('timeline.stage.compile'),
+  preview: tNow('timeline.stage.preview'),
+  verify: tNow('timeline.stage.verify'),
+  retry: tNow('timeline.stage.retry'),
+  budget: tNow('timeline.stage.budget'),
+  cancel: tNow('timeline.stage.cancel'),
+  done: tNow('timeline.stage.done'),
+})
 
 /** 卡05：等待提示阈值（毫秒）——按最后有效事件计算，而非任务总耗时 */
 const WAIT_NOTICE_MS = 15_000
@@ -61,13 +62,13 @@ function stepIcon(step: AssistantThinkingStep): string {
 function stepLabel(step: AssistantThinkingStep): string {
   if (step.type === 'tool_call') return step.message
   if (step.type === 'plan') return step.message
-  return STAGE_LABEL[step.stage ?? 'think'] ?? step.message
+  return STAGE_LABEL()[step.stage ?? 'think'] ?? step.message
 }
 
 function durationSuffix(step: AssistantThinkingStep): string {
   if (step.durationMs === undefined || step.durationMs === null) return ''
   const seconds = Math.round(step.durationMs / 100) / 10
-  return `（耗时 ${seconds}s）`
+  return tNow('timeline.took', { s: seconds })
 }
 
 function elapsedText(ms: number): string {
@@ -78,6 +79,7 @@ function elapsedText(ms: number): string {
 }
 
 function PlanDetail({ step }: { step: AssistantThinkingStep }) {
+  const t = useT()
   if (step.type !== 'plan') return null
   const files = step.affectedFiles ?? []
   const params = step.parameterChanges ?? []
@@ -86,7 +88,7 @@ function PlanDetail({ step }: { step: AssistantThinkingStep }) {
       {step.strategy ? <p className="timeline-plan-strategy">{step.strategy}</p> : null}
       {files.length ? (
         <div className="timeline-plan-section">
-          <strong>影响文件</strong>
+          <strong>{t('timeline.files')}</strong>
           <ul>
             {files.map((f) => (
               <li key={f}>{f}</li>
@@ -96,7 +98,7 @@ function PlanDetail({ step }: { step: AssistantThinkingStep }) {
       ) : null}
       {params.length ? (
         <div className="timeline-plan-section">
-          <strong>参数变更</strong>
+          <strong>{t('timeline.params')}</strong>
           <ul>
             {params.map((p, i) => (
               <li key={i}>
@@ -126,6 +128,7 @@ function useTimelineClock(active: boolean): number {
 }
 
 export function AssistantThinkingTimeline({ steps, busy, interrupted, startedAt, stale }: AssistantThinkingTimelineProps) {
+  const t = useT()
   const [expanded, setExpanded] = useState<Set<number>>(new Set())
   // RF05：分页加载——默认最近 12 步，"还有 N 步"每页 50 条，全部可达
   const [extraVisible, setExtraVisible] = useState(0)
@@ -159,20 +162,20 @@ export function AssistantThinkingTimeline({ steps, busy, interrupted, startedAt,
   return (
     <div className="assistant-thinking-timeline">
       {stale && !steps.length ? (
-        <div className="timeline-stale">旧记录未保存执行过程</div>
+        <div className="timeline-stale">{t('timeline.stale')}</div>
       ) : null}
       {isBusy && lastStep ? (
         <div className="timeline-current" data-testid="timeline-current">
           <span>
-            当前：{stepLabel(lastStep)}
+            {t('timeline.current')}{stepLabel(lastStep)}
             {lastStep.type === 'tool_call' && lastStep.ok === undefined && lastStep.at
-              ? `（已运行 ${elapsedText(now - lastStep.at)}）`
+              ? t('timeline.running', { d: elapsedText(now - lastStep.at) })
               : ''}
           </span>
-          {startedAt ? <span className="timeline-elapsed">· 已进行 {elapsedText(now - startedAt)}</span> : null}
+          {startedAt ? <span className="timeline-elapsed">{t('timeline.elapsed', { d: elapsedText(now - startedAt) })}</span> : null}
           {waiting ? (
             <span className="timeline-waiting">
-              {lastToolRunning ? '⏳ 工具仍在运行 · ' : '⏳ 等待模型响应 · '}
+              {lastToolRunning ? t('timeline.toolRunning') : t('timeline.waitingModel')}
               {elapsedText(idleMs)}
             </span>
           ) : null}
@@ -184,7 +187,7 @@ export function AssistantThinkingTimeline({ steps, busy, interrupted, startedAt,
           className="timeline-more"
           onClick={() => setExtraVisible((v) => Math.min(v + PAGE_SIZE, steps.length))}
         >
-          …还有 {hiddenCount} 步
+          {t('timeline.more', { count: hiddenCount })}
         </button>
       )}
       {steps.length > DEFAULT_VISIBLE && visibleCount >= steps.length && (
@@ -193,7 +196,7 @@ export function AssistantThinkingTimeline({ steps, busy, interrupted, startedAt,
           className="timeline-less"
           onClick={() => { setExtraVisible(0); setShowAll(false) }}
         >
-          收起，只看最近 {DEFAULT_VISIBLE} 步
+          {t('timeline.less', { count: DEFAULT_VISIBLE })}
         </button>
       )}
       <ul className="timeline-list">
@@ -226,13 +229,13 @@ export function AssistantThinkingTimeline({ steps, busy, interrupted, startedAt,
         {isBusy && (
           <li className="timeline-step is-pending">
             <span className="timeline-icon">⟳</span>
-            <span className="timeline-label">进行中…</span>
+            <span className="timeline-label">{t('timeline.inProgress')}</span>
           </li>
         )}
         {interrupted && (
           <li className="timeline-step is-interrupted">
             <span className="timeline-icon">⏹</span>
-            <span className="timeline-label">已中断</span>
+            <span className="timeline-label">{t('timeline.interrupted')}</span>
           </li>
         )}
       </ul>

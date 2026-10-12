@@ -41,6 +41,7 @@ import {
   type PreviewCameraMode,
   type PreviewViewPreset,
 } from './previewCamera'
+import { tNow } from '../i18n'
 
 interface PreviewViewportProps {
   preview: PreviewPayload | null
@@ -94,13 +95,13 @@ export interface PreviewSourceControl {
   onVerify?: () => void
 }
 
-const DISPLAY_MODES: Array<{ id: PreviewDisplayMode; label: string; title: string }> = [
-  { id: 'solid', label: '实体', title: 'Solid shaded, uniform color' },
-  { id: 'random', label: '随机', title: 'Each part gets a distinct color' },
-  { id: 'wire', label: '线框', title: 'Feature edges only (hidden line)' },
-  { id: 'xray', label: 'X光', title: 'X-ray fresnel ghost' },
-  { id: 'mono', label: '单色', title: 'Flat unlit single color' },
-  { id: 'material', label: '材质', title: 'Semantic PBR materials' },
+const DISPLAY_MODES = (): Array<{ id: PreviewDisplayMode; label: string; title: string }> => [
+  { id: 'solid', label: tNow('preview.view.mode.solid'), title: tNow('preview.view.modeTitle.solid') },
+  { id: 'random', label: tNow('preview.view.mode.random'), title: tNow('preview.view.modeTitle.random') },
+  { id: 'wire', label: tNow('preview.view.mode.wire'), title: tNow('preview.view.modeTitle.wire') },
+  { id: 'xray', label: tNow('preview.view.mode.xray'), title: tNow('preview.view.modeTitle.xray') },
+  { id: 'mono', label: tNow('preview.view.mode.mono'), title: tNow('preview.view.modeTitle.mono') },
+  { id: 'material', label: tNow('preview.view.mode.material'), title: tNow('preview.view.modeTitle.material') },
 ]
 
 export function PreviewViewport({
@@ -220,8 +221,8 @@ export function PreviewViewport({
     <section className={`viewport-surface viewport-surface-${variant}`}>
       <div className="viewport-toolbar">
         <div>
-          <strong>3D View</strong>
-          <span>{preview?.meshes.length ?? 0} meshes</span>
+          <strong>{t('preview.view.title3d')}</strong>
+          <span>{t('preview.view.meshes', { count: preview?.meshes.length ?? 0 })}</span>
         </div>
         <div className="viewport-toolbar-actions">
           {sourceControl ? (
@@ -230,9 +231,9 @@ export function PreviewViewport({
                 type="button"
                 className={`viewport-action-button${sourceControl.active ? '' : ' active'}`}
                 onClick={() => sourceControl.onModeChange('local')}
-                title="Built-in approximate preview (instant, follows parameter edits)"
+                title={t('preview.view.localTitle')}
               >
-                本地
+                {t('preview.view.local')}
               </button>
               <button
                 type="button"
@@ -240,10 +241,10 @@ export function PreviewViewport({
                 disabled={sourceControl.available === false}
                 onClick={() => sourceControl.onModeChange('authoritative')}
                 title={sourceControl.available === false
-                  ? 'Archicad 未连接，无法使用权威预览'
-                  : 'Archicad 权威预览（调用 Archicad 渲染，不跟随参数改动，需手动刷新）'}
+                  ? t('preview.view.acOffline')
+                  : t('preview.view.acTitle')}
               >
-                AC权威
+                {t('preview.view.ac')}
               </button>
               {sourceControl.active ? (
                 <button
@@ -251,9 +252,9 @@ export function PreviewViewport({
                   className={`viewport-action-button${sourceControl.stale ? ' viewport-action-attention' : ''}`}
                   disabled={sourceControl.loading}
                   onClick={sourceControl.onRefresh}
-                  title={sourceControl.stale ? '参数已变，点击刷新权威预览' : 'Refresh authoritative preview from Archicad'}
+                  title={sourceControl.stale ? t('preview.view.staleTitle') : t('preview.view.refreshTitle')}
                 >
-                  {sourceControl.loading ? '刷新中…' : '刷新权威'}
+                  {sourceControl.loading ? t('preview.view.refreshing') : t('preview.view.refresh')}
                 </button>
               ) : null}
               {sourceControl.onVerify ? (
@@ -263,9 +264,9 @@ export function PreviewViewport({
                     className="viewport-action-button"
                     disabled={sourceControl.available === false || sourceControl.verificationLoading || sourceControl.verificationDisabled}
                     onClick={sourceControl.onVerify}
-                    title={sourceControl.verificationDisabled ? '请先保存或取消脚本修改' : '编译当前已保存源码并在 Archicad 中核验准确 GSM'}
+                    title={sourceControl.verificationDisabled ? t('preview.view.saveFirst') : t('preview.view.verifyTitle')}
                   >
-                    {sourceControl.verificationLoading ? '验收中…' : '运行 AC 验收'}
+                    {sourceControl.verificationLoading ? t('preview.view.verifying') : t('preview.view.verify')}
                   </button>
                   <span className={`viewport-verification-status is-${sourceControl.verificationStatus ?? 'not_checked'}`}>
                     {hostVerificationLabel(sourceControl.verificationStatus ?? 'not_checked')}
@@ -280,7 +281,7 @@ export function PreviewViewport({
               <span className="viewport-toolbar-sep" aria-hidden="true" />
             </>
           ) : null}
-          {DISPLAY_MODES.map((mode) => (
+          {DISPLAY_MODES().map((mode) => (
             <button
               key={mode.id}
               type="button"
@@ -292,11 +293,11 @@ export function PreviewViewport({
             </button>
           ))}
           <span className="viewport-toolbar-sep" aria-hidden="true" />
-          <button type="button" className="viewport-action-button" onClick={fitView} title="Fit model to view">
-            Fit
+          <button type="button" className="viewport-action-button" onClick={fitView} title={t('preview.view.fitTitle')}>
+            {t('preview.view.fit')}
           </button>
-          <button type="button" className="viewport-action-button" onClick={resetView} title="Reset camera and layers">
-            Reset
+          <button type="button" className="viewport-action-button" onClick={resetView} title={t('preview.view.resetTitle')}>
+            {t('preview.view.reset')}
           </button>
           <ViewportPresetButton preset="iso" activePreset={viewPreset} onSelect={setViewPreset} />
           <ViewportPresetButton preset="top" activePreset={viewPreset} onSelect={setViewPreset} />
@@ -306,7 +307,7 @@ export function PreviewViewport({
             type="button"
             className={`viewport-action-button${cameraMode === 'orthographic' ? ' active' : ''}`}
             onClick={() => setCameraMode((mode) => (mode === 'perspective' ? 'orthographic' : 'perspective'))}
-            title="Toggle orthographic inspection mode"
+            title={t('preview.view.orthoTitle')}
           >
             {cameraMode === 'perspective' ? 'Persp' : 'Ortho'}
           </button>
@@ -314,17 +315,17 @@ export function PreviewViewport({
             type="button"
             className={`viewport-action-button${showEdges ? ' active' : ''}`}
             onClick={() => setShowEdges((value) => !value)}
-            title="Toggle mesh edges"
+            title={t('preview.view.edgesTitle')}
           >
-            Edges
+            {t('preview.view.edges')}
           </button>
           <button
             type="button"
             className={`viewport-action-button${showGrid ? ' active' : ''}`}
             onClick={() => setShowGrid((value) => !value)}
-            title="Toggle construction grid"
+            title={t('preview.view.gridTitle')}
           >
-            Grid
+            {t('preview.view.grid')}
           </button>
           <ShadowsToggle enabled={shadowsEnabled} onToggle={() => setShowShadows(!shadowsEnabled)} />
           {quality && onQualityChange ? <QualityToggle quality={quality} onChange={onQualityChange} /> : null}
@@ -355,17 +356,17 @@ export function PreviewViewport({
             </>
           ) : null}
           {onFloat ? (
-            <button type="button" className="viewport-action-button" onClick={onFloat} title="Open floating preview">
-              Float
+            <button type="button" className="viewport-action-button" onClick={onFloat} title={t('preview.view.floatTitle')}>
+              {t('preview.view.float')}
             </button>
           ) : null}
           {expanded ? (
-            <button type="button" className="viewport-action-button" onClick={onCollapse} title="Return to script editor">
-              Dock
+            <button type="button" className="viewport-action-button" onClick={onCollapse} title={t('preview.view.dockTitle')}>
+              {t('preview.view.dock')}
             </button>
           ) : onExpand ? (
-            <button type="button" className="viewport-action-button" onClick={onExpand} title="Expand preview to main workspace">
-              Expand
+            <button type="button" className="viewport-action-button" onClick={onExpand} title={t('preview.view.expandTitle')}>
+              {t('preview.view.expand')}
             </button>
           ) : null}
           {actions}
@@ -378,18 +379,18 @@ export function PreviewViewport({
         ) : null}
         {/* 权威预览标注：显示权威 payload 时左上角徽章 */}
         {sourceControl?.showingAuthoritative ? (
-          <div className="viewport-authoritative-tag">Archicad 权威</div>
+          <div className="viewport-authoritative-tag">{t('preview.view.acTag')}</div>
         ) : null}
         {/* 权威预览轻提示：取数后参数又变了，不自动重取，等用户点「刷新权威」 */}
         {sourceControl?.active && sourceControl.stale ? (
-          <div className="viewport-authoritative-stale">参数已变，点击「刷新权威」更新</div>
+          <div className="viewport-authoritative-stale">{t('preview.view.staleBanner')}</div>
         ) : null}
         {/* 权威取数失败：错误原文上屏（不静默），画布保持显示本地预览 */}
         {(sourceControl?.active && sourceControl.error) || sourceControl?.verificationError ? (
           <div className="viewport-authoritative-error" role="alert">
             {sourceControl.verificationError
-              ? `AC 验收失败：${sourceControl.verificationError}`
-              : `权威预览失败：${sourceControl.error}`}
+              ? t('preview.view.verifyFailed', { error: String(sourceControl.verificationError) })
+              : t('preview.view.acFailed', { error: String(sourceControl.error) })}
           </div>
         ) : null}
         {/* absolute + inset:0：见 styles.css .canvas-wrap 注释，
@@ -527,14 +528,14 @@ export function PreviewViewport({
           className="viewport-fidelity-hint"
           title={
             sourceControl?.showingAuthoritative
-              ? 'Rendered by Archicad with the current parameter overrides.'
-              : 'The built-in previewer renders a GDL subset. Compile and open in Archicad for the final result.'
+              ? t('preview.view.acRendered')
+              : t('preview.view.fidelity')
           }
         >
-          {sourceControl?.showingAuthoritative ? 'Archicad 权威预览（由 Archicad 渲染）' : 'Approximate preview · verify in Archicad'}
+          {sourceControl?.showingAuthoritative ? t('preview.view.acShowing') : t('preview.view.approx')}
         </span>
         <span>
-          {preview?.meshes.length ?? 0} meshes | {warnings.length} warnings | {sourceLabel}
+          {t('preview.view.footer3d', { meshes: preview?.meshes.length ?? 0, warnings: warnings.length, source: sourceLabel })}
         </span>
       </footer>
     </section>
@@ -543,18 +544,18 @@ export function PreviewViewport({
 
 function hostVerificationLabel(status: HostVerificationStatus): string {
   return {
-    passed: '已验收',
-    failed: '未通过',
-    unsupported: '不支持',
-    identity_unverified: '身份未核验',
-    not_checked: '未验收',
-    stale: '已过期',
+    passed: tNow('preview.view.host.passed'),
+    failed: tNow('preview.view.host.failed'),
+    unsupported: tNow('preview.view.host.unsupported'),
+    identity_unverified: tNow('preview.view.host.identity_unverified'),
+    not_checked: tNow('preview.view.host.not_checked'),
+    stale: tNow('preview.view.host.stale'),
   }[status]
 }
 
 function previewSourceLabel(preview: PreviewPayload | null, hasDirtyScripts: boolean) {
-  if (hasDirtyScripts && preview?.verification?.source !== 'editor_buffer') return 'Stale'
-  return preview?.verification?.source === 'editor_buffer' ? 'Editor Buffer' : 'Saved'
+  if (hasDirtyScripts && preview?.verification?.source !== 'editor_buffer') return tNow('preview.view.srcStale')
+  return preview?.verification?.source === 'editor_buffer' ? tNow('preview.view.srcBuffer') : tNow('preview.view.srcSaved')
 }
 
 function ViewportPresetButton({

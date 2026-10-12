@@ -11,6 +11,7 @@ import {
   zoomAt,
   type View2D,
 } from './preview2dView'
+import { useT, tNow } from '../i18n'
 
 interface Preview2DViewportProps {
   preview: Preview2DPayload | null
@@ -23,6 +24,7 @@ interface Preview2DViewportProps {
  * 视口几何数学在 preview2dView.ts（纯函数），本组件只持有 viewBox 状态。
  */
 export function Preview2DViewport({ preview, warnings, sourceControl }: Preview2DViewportProps) {
+  const t = useT()
   const bounds = useMemo(() => computeBounds2D(preview), [preview])
   const boundsKey = bounds ? `${bounds.minX},${bounds.minY},${bounds.maxX},${bounds.maxY}` : ''
   const entityCount = preview ? geometryCount(preview) : 0
@@ -127,8 +129,8 @@ export function Preview2DViewport({ preview, warnings, sourceControl }: Preview2
     <section className="viewport-surface viewport-surface-2d">
       <div className="viewport-toolbar">
         <div>
-          <span>2D View</span>
-          <span>{entityCount} entities</span>
+          <span>{t('preview.view.title2d')}</span>
+          <span>{t('preview.view.entities', { count: entityCount })}</span>
         </div>
         {sourceControl ? (
           <div className="viewport-toolbar-actions">
@@ -137,16 +139,16 @@ export function Preview2DViewport({ preview, warnings, sourceControl }: Preview2
               className={`viewport-action-button${sourceControl.active ? '' : ' active'}`}
               onClick={() => sourceControl.onModeChange('local')}
             >
-              本地
+              {t('preview.view.local')}
             </button>
             <button
               type="button"
               className={`viewport-action-button${sourceControl.active ? ' active' : ''}`}
               disabled={sourceControl.available === false}
               onClick={() => sourceControl.onModeChange('authoritative')}
-              title={sourceControl.available === false ? 'Archicad 未连接，无法使用权威预览' : undefined}
+              title={sourceControl.available === false ? t('preview.view.acOffline') : undefined}
             >
-              AC权威
+              {t('preview.view.ac')}
             </button>
             {sourceControl.active ? (
               <button
@@ -155,7 +157,7 @@ export function Preview2DViewport({ preview, warnings, sourceControl }: Preview2
                 disabled={sourceControl.loading}
                 onClick={sourceControl.onRefresh}
               >
-                {sourceControl.loading ? '刷新中…' : '刷新权威'}
+                {sourceControl.loading ? t('preview.view.refreshing') : t('preview.view.refresh')}
               </button>
             ) : null}
             {sourceControl.onVerify ? (
@@ -166,7 +168,7 @@ export function Preview2DViewport({ preview, warnings, sourceControl }: Preview2
                   disabled={sourceControl.available === false || sourceControl.verificationLoading || sourceControl.verificationDisabled}
                   onClick={sourceControl.onVerify}
                 >
-                  {sourceControl.verificationLoading ? '验收中…' : '运行 AC 验收'}
+                  {sourceControl.verificationLoading ? t('preview.view.verifying') : t('preview.view.verify')}
                 </button>
                 <span className={`viewport-verification-status is-${sourceControl.verificationStatus ?? 'not_checked'}`}>
                   {hostVerificationLabel(sourceControl.verificationStatus ?? 'not_checked')}
@@ -182,7 +184,7 @@ export function Preview2DViewport({ preview, warnings, sourceControl }: Preview2
         ) : null}
       </div>
       {sourceControl?.error ? <div className="viewport-source-error">{sourceControl.error}</div> : null}
-      {sourceControl?.stale && !sourceControl.error ? <div className="viewport-source-stale">参数已变更，请刷新权威预览</div> : null}
+      {sourceControl?.stale && !sourceControl.error ? <div className="viewport-source-stale">{t('preview.view.stale2d')}</div> : null}
       <div className="preview2d-surface">
         {hasGeometry && preview ? (
           <svg
@@ -190,7 +192,7 @@ export function Preview2DViewport({ preview, warnings, sourceControl }: Preview2
             className="preview2d-svg"
             viewBox={toViewBoxString(view)}
             role="img"
-            aria-label="2D preview"
+            aria-label={t('preview.view.aria2d')}
             style={{ touchAction: 'none', cursor: 'grab' }}
             onPointerDown={onPointerDown}
             onPointerMove={onPointerMove}
@@ -250,15 +252,15 @@ export function Preview2DViewport({ preview, warnings, sourceControl }: Preview2
             </g>
           </svg>
         ) : (
-          <div className="preview2d-empty">No 2D geometry</div>
+          <div className="preview2d-empty">{t('preview.view.no2d')}</div>
         )}
       </div>
       <footer className="viewport-footer">
-        <span className="viewport-fidelity-hint" title="The built-in previewer renders a GDL subset. Compile and open in Archicad for the final result.">
-          {sourceControl?.showingAuthoritative ? 'Archicad authoritative' : 'Approximate preview · verify in Archicad'}
+        <span className="viewport-fidelity-hint" title={t('preview.view.fidelity')}>
+          {sourceControl?.showingAuthoritative ? t('preview.view.acAuth2d') : t('preview.view.approx')}
         </span>
         <span>
-          {entityCount} entities | {warnings.length} warnings
+          {t('preview.view.footer2d', { entities: entityCount, warnings: warnings.length })}
         </span>
       </footer>
     </section>
@@ -267,12 +269,12 @@ export function Preview2DViewport({ preview, warnings, sourceControl }: Preview2
 
 function hostVerificationLabel(status: NonNullable<PreviewSourceControl['verificationStatus']>): string {
   return {
-    passed: '已验收',
-    failed: '未通过',
-    unsupported: '不支持',
-    identity_unverified: '身份未核验',
-    not_checked: '未验收',
-    stale: '已过期',
+    passed: tNow('preview.view.host.passed'),
+    failed: tNow('preview.view.host.failed'),
+    unsupported: tNow('preview.view.host.unsupported'),
+    identity_unverified: tNow('preview.view.host.identity_unverified'),
+    not_checked: tNow('preview.view.host.not_checked'),
+    stale: tNow('preview.view.host.stale'),
   }[status]
 }
 
