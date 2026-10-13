@@ -115,7 +115,7 @@
 
 ## Fork MM STUDIO — emballage .dmg
 - App de bureau : « MM STUDIO GDL », identifiant `fr.mmstudio.gdl`, icônes MM or sur ardoise dans `src-tauri/icons/`.
-- Build : workflow manuel `.github/workflows/build-mac-dmg.yml` (macOS Apple Silicon + Intel, sans signature Apple ni clé d'updater, `createUpdaterArtifacts=false`).
+- Build : workflow `.github/workflows/build-mac-dmg.yml` (lancé à chaque push sur `mm-studio` ou à la main) (macOS Apple Silicon + Intel, sans signature Apple ni clé d'updater, `createUpdaterArtifacts=false`).
 - Mises à jour : endpoints redirigés vers `maximecorbeau06/openbrep` ; aucun `latest.json` publié = mise à jour auto inactive.
 - `release-tauri.yml` (d'origine) est conservé pour les tests de contrat mais sans déclencheur automatique.
 

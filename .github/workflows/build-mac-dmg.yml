@@ -1,12 +1,16 @@
 name: Build MM STUDIO GDL (.dmg macOS)
 
-# Lancement manuel uniquement : onglet Actions > « Build MM STUDIO GDL » > Run workflow.
+# Lancement automatique à chaque envoi sur `mm-studio`, ou manuel : onglet Actions > « Build MM STUDIO GDL » > Run workflow.
 # Produit un .dmg pour Apple Silicon (M1/M2/M3/M4) et un pour Mac Intel.
 # L'app n'est ni signée ni notarisée (pas de compte Apple Developer) :
 # au premier lancement, voir le README / les instructions « xattr ».
 
 on:
   workflow_dispatch:
+  # La branche par défaut du fork reste `main` : ce déclencheur permet de
+  # construire le .dmg à chaque envoi sur `mm-studio`.
+  push:
+    branches: [mm-studio]
 
 permissions:
   contents: read
