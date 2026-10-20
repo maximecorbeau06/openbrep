@@ -155,6 +155,22 @@ def test_anthropic_presets_publish_the_anthropic_wire_mode():
     assert catalog.resolve("claude-sonnet-4-6").api_mode == "anthropic_messages"
 
 
+def test_claude_5_5_presets_are_offered_on_the_anthropic_wire_mode():
+    catalog = build_model_catalog(_config())
+
+    for model in ("claude-opus-5-5", "claude-sonnet-5-5"):
+        assert catalog.resolve(model).api_mode == "anthropic_messages"
+
+
+def test_transport_compat_rejects_temperature_only_for_claude_5_generation():
+    from openbrep.model_catalog import transport_compat
+
+    for wire in ("claude-opus-5-5", "anthropic/claude-sonnet-5-5", "claude-opus-5", "claude-haiku-5-5"):
+        assert transport_compat(wire).reject_temperature, wire
+    for wire in ("claude-sonnet-4-6", "anthropic/claude-opus-4-6", "claude-haiku-4-5-20251001", "gpt-5.4", "glm-5"):
+        assert not transport_compat(wire).reject_temperature, wire
+
+
 def test_configured_entry_shadows_the_builtin_preset_it_overrides():
     catalog = build_model_catalog(
         _config(

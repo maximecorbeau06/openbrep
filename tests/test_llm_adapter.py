@@ -492,6 +492,37 @@ class TestLLMAdapterVision(unittest.TestCase):
 
 
 
+    def _claude_adapter(self, model, *, stream_result=False):
+        adapter = LLMAdapter(LLMConfig(model=model, api_key="test-key", temperature=0.2, max_tokens=512))
+        adapter._litellm = MagicMock()
+        built = self._mock_response(model_name=f"anthropic/{model}")
+        if stream_result:
+            adapter._litellm.completion.return_value = [MagicMock()]
+            adapter._litellm.stream_chunk_builder.return_value = built
+        else:
+            adapter._litellm.completion.return_value = built
+        return adapter
+
+    def test_claude_5_generation_never_sends_temperature(self):
+        # Opus 5.5 / Sonnet 5.5 renvoient 400 si temperature est envoyée
+        for model in ("claude-opus-5-5", "claude-sonnet-5-5"):
+            adapter = self._claude_adapter(model)
+            adapter.generate([{"role": "user", "content": "hi"}], stream=False)
+            self.assertNotIn("temperature", adapter._litellm.completion.call_args.kwargs, model)
+
+            adapter = self._claude_adapter(model)
+            adapter.generate_with_tools([{"role": "user", "content": "hi"}], tools=[])
+            self.assertNotIn("temperature", adapter._litellm.completion.call_args.kwargs, model)
+
+            adapter = self._claude_adapter(model, stream_result=True)
+            adapter.generate_with_image(text_prompt="describe", image_b64="YWJj", image_mime="image/png")
+            self.assertNotIn("temperature", adapter._litellm.completion.call_args.kwargs, model)
+
+    def test_claude_4_generation_keeps_configured_temperature(self):
+        adapter = self._claude_adapter("claude-sonnet-4-6")
+        adapter.generate([{"role": "user", "content": "hi"}], stream=False)
+        self.assertEqual(adapter._litellm.completion.call_args.kwargs["temperature"], 0.2)
+
 class TestLLMErrorClassification(unittest.TestCase):
     """断点 1/2 修复：认证特征优先于异常类型；网络类异常给中文引导。"""
 

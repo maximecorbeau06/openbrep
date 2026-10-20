@@ -189,6 +189,9 @@ class TransportCompat:
 
     drop_params: bool = False
     omit_temperature: bool = False
+    # Claude 5-generation models reject `temperature` on every transport
+    # (Opus 5/5.5, Fable, Mythos: removed; Sonnet/Haiku 5.x: non-default → 400).
+    reject_temperature: bool = False
 
 
 # Tokens that mark an OpenAI reasoning-model wire id. ``drop_params`` only covers
@@ -196,6 +199,13 @@ class TransportCompat:
 # temperature for the o-series, which silently ignores it.
 _DROP_PARAMS_TOKENS: tuple[str, ...] = ("gpt-5", "codex")
 _OMIT_TEMPERATURE_TOKENS: tuple[str, ...] = ("gpt-5", "codex", "o1", "o3", "o4")
+_REJECT_TEMPERATURE_TOKENS: tuple[str, ...] = (
+    "claude-opus-5",
+    "claude-sonnet-5",
+    "claude-haiku-5",
+    "claude-fable",
+    "claude-mythos",
+)
 
 
 def transport_compat(wire_model: str) -> TransportCompat:
@@ -210,6 +220,7 @@ def transport_compat(wire_model: str) -> TransportCompat:
     return TransportCompat(
         drop_params=any(token in lowered for token in _DROP_PARAMS_TOKENS),
         omit_temperature=any(token in lowered for token in _OMIT_TEMPERATURE_TOKENS),
+        reject_temperature=any(token in lowered for token in _REJECT_TEMPERATURE_TOKENS),
     )
 
 

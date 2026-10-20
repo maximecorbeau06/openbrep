@@ -550,7 +550,7 @@ class LLMAdapter:
         if instructions:
             resp_kwargs["instructions"] = instructions
 
-        if transport_compat(model).omit_temperature:
+        if transport_compat(model).omit_temperature or transport_compat(model).reject_temperature:
             # OpenAI 推理模型的 temperature 约束：不传 = 模型默认（与 chat 路径
             # drop_params 的净效果一致），避免 gpt-5 400 / o 系静默忽略
             kwargs.pop("temperature", None)
@@ -746,6 +746,9 @@ class LLMAdapter:
 
         if transport_compat(model).drop_params:
             completion_kwargs["drop_params"] = True
+        # Claude 5 代模型拒收 temperature（400），不传 = 模型默认
+        if transport_compat(model).reject_temperature:
+            completion_kwargs.pop("temperature", None)
 
         # 透传用户配置的 extra_body（如 DeepSeek 的 thinking={"type": "disabled"}）。
         # provider 条目级 extra_body 覆盖顶层；不传时行为不变。
@@ -880,6 +883,9 @@ class LLMAdapter:
 
         if transport_compat(model).drop_params:
             completion_kwargs["drop_params"] = True
+        # Claude 5 代模型拒收 temperature（400），不传 = 模型默认
+        if transport_compat(model).reject_temperature:
+            completion_kwargs.pop("temperature", None)
 
         extra_body = self._effective_extra_body(resolved)
         if extra_body:
@@ -1048,6 +1054,9 @@ class LLMAdapter:
 
         if transport_compat(model).drop_params:
             completion_kwargs["drop_params"] = True
+        # Claude 5 代模型拒收 temperature（400），不传 = 模型默认
+        if transport_compat(model).reject_temperature:
+            completion_kwargs.pop("temperature", None)
 
         extra_body = self._effective_extra_body(resolved)
         if extra_body:
