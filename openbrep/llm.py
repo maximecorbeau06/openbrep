@@ -356,6 +356,14 @@ class LLMAdapter:
                 f"→ 在 config.toml 设置 extra_body = {{ thinking = {{ type = \"disabled\" }} }}\n"
                 f"→ 或把 max_tokens 提高到 16384 以上"
             )
+        if getattr(choice, "finish_reason", None) == "length":
+            # Réflexion masquée (modèles Claude 5) : rien dans reasoning_content,
+            # mais la réponse a bien été coupée par la limite de max_tokens.
+            raise RuntimeError(
+                "Le modèle a été coupé avant d'écrire sa réponse : sa réflexion a "
+                "utilisé toute la place autorisée (max_tokens). Augmente « max_tokens » "
+                "dans Réglages > IA, ou choisis un modèle plus rapide."
+            )
         raise RuntimeError(
             "LLM 返回了空内容 — 可能是内容过滤、模型配置错误，或该模型不适合当前任务。"
         )
@@ -746,9 +754,6 @@ class LLMAdapter:
 
         if transport_compat(model).drop_params:
             completion_kwargs["drop_params"] = True
-        # Claude 5 代模型拒收 temperature（400），不传 = 模型默认
-        if transport_compat(model).reject_temperature:
-            completion_kwargs.pop("temperature", None)
 
         # 透传用户配置的 extra_body（如 DeepSeek 的 thinking={"type": "disabled"}）。
         # provider 条目级 extra_body 覆盖顶层；不传时行为不变。
@@ -768,6 +773,7 @@ class LLMAdapter:
             completion_kwargs["api_base"] = api_base
 
         completion_kwargs.update(kwargs)
+        _apply_thinking_model_limits(completion_kwargs, model)
 
         start_time = time.perf_counter()
         try:
@@ -883,9 +889,6 @@ class LLMAdapter:
 
         if transport_compat(model).drop_params:
             completion_kwargs["drop_params"] = True
-        # Claude 5 代模型拒收 temperature（400），不传 = 模型默认
-        if transport_compat(model).reject_temperature:
-            completion_kwargs.pop("temperature", None)
 
         extra_body = self._effective_extra_body(resolved)
         if extra_body:
@@ -900,6 +903,7 @@ class LLMAdapter:
             completion_kwargs["api_base"] = api_base
 
         completion_kwargs.update(kwargs)
+        _apply_thinking_model_limits(completion_kwargs, model)
 
         start_time = time.perf_counter()
         try:
@@ -1054,9 +1058,6 @@ class LLMAdapter:
 
         if transport_compat(model).drop_params:
             completion_kwargs["drop_params"] = True
-        # Claude 5 代模型拒收 temperature（400），不传 = 模型默认
-        if transport_compat(model).reject_temperature:
-            completion_kwargs.pop("temperature", None)
 
         extra_body = self._effective_extra_body(resolved)
         if extra_body:
@@ -1072,6 +1073,7 @@ class LLMAdapter:
             completion_kwargs["api_base"] = api_base
 
         completion_kwargs.update(kwargs)
+        _apply_thinking_model_limits(completion_kwargs, model)
 
         start_time = time.perf_counter()
         total_b64_len = sum(len(str(img.get("b64") or "")) for img in images)
@@ -1227,6 +1229,30 @@ class LLMAdapter:
         """
         return self._resolve_model_target().litellm_model
 
+
+
+
+# Plancher de max_tokens pour les modèles Claude de génération 5 : leur réflexion
+# (toujours active) est décomptée du même budget que la réponse. Les petites
+# limites prévues pour d'anciens modèles (10, 1200, 4096…) étaient épuisées par
+# la réflexion seule → finish_reason=length et contenu vide. En non-streaming on
+# reste à 16000 pour éviter les délais HTTP ; en streaming on monte à 64000.
+_THINKING_FLOOR_STREAM = 64000
+_THINKING_FLOOR_NON_STREAM = 16000
+
+
+def _apply_thinking_model_limits(completion_kwargs: dict, model: str) -> None:
+    """Contraintes des modèles Claude 5 appliquées après fusion des kwargs d'appel."""
+    if not transport_compat(model).reject_temperature:
+        return
+    # 400 si temperature est envoyée, y compris quand l'appelant la fixe (0.0, 0.1…)
+    completion_kwargs.pop("temperature", None)
+    floor = _THINKING_FLOOR_STREAM if completion_kwargs.get("stream") else _THINKING_FLOOR_NON_STREAM
+    try:
+        requested = int(completion_kwargs.get("max_tokens") or 0)
+    except (TypeError, ValueError):
+        requested = 0
+    completion_kwargs["max_tokens"] = max(requested, floor)
 
 
 def _parse_tool_calls(raw_tool_calls) -> list[ToolCall]:

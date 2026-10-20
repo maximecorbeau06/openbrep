@@ -518,6 +518,34 @@ class TestLLMAdapterVision(unittest.TestCase):
             adapter.generate_with_image(text_prompt="describe", image_b64="YWJj", image_mime="image/png")
             self.assertNotIn("temperature", adapter._litellm.completion.call_args.kwargs, model)
 
+    def test_claude_5_generation_drops_caller_temperature_and_floors_max_tokens(self):
+        # Régression : les appels internes (routeur, lecture d'image…) imposaient
+        # temperature et de petits max_tokens après le filtrage → 400 ou réponse vide.
+        adapter = self._claude_adapter("claude-sonnet-5-5")
+        adapter.generate([{"role": "user", "content": "hi"}], stream=False, temperature=0.1, max_tokens=10)
+        kwargs = adapter._litellm.completion.call_args.kwargs
+        self.assertNotIn("temperature", kwargs)
+        self.assertEqual(kwargs["max_tokens"], 16000)
+
+        adapter = self._claude_adapter("claude-opus-5-5", stream_result=True)
+        adapter.generate_with_image(text_prompt="describe", image_b64="YWJj", image_mime="image/png", max_tokens=1200)
+        self.assertEqual(adapter._litellm.completion.call_args.kwargs["max_tokens"], 64000)
+
+    def test_claude_4_generation_keeps_caller_max_tokens(self):
+        adapter = self._claude_adapter("claude-sonnet-4-6")
+        adapter.generate([{"role": "user", "content": "hi"}], stream=False, max_tokens=10)
+        self.assertEqual(adapter._litellm.completion.call_args.kwargs["max_tokens"], 10)
+
+    def test_empty_content_cut_by_length_explains_the_token_budget(self):
+        adapter = self._claude_adapter("claude-sonnet-5-5")
+        choice = MagicMock()
+        choice.message.reasoning_content = ""
+        choice.finish_reason = "length"
+        with self.assertRaises(RuntimeError) as cm:
+            adapter._raise_if_reasoning_only(choice)
+        self.assertIn("max_tokens", str(cm.exception))
+        self.assertIn("coupé", str(cm.exception))
+
     def test_claude_4_generation_keeps_configured_temperature(self):
         adapter = self._claude_adapter("claude-sonnet-4-6")
         adapter.generate([{"role": "user", "content": "hi"}], stream=False)
