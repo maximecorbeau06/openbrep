@@ -65,3 +65,15 @@ def test_external_scripts_and_xml_are_the_actual_advisor_source(tmp_path):
     assert after.context_fingerprint != before.context_fingerprint
     assert not before.matches(project, 1)
     assert not after.matches(project, 1)  # reload session before executing externally changed source
+
+
+def test_unsaved_new_project_snapshot_ignores_task_metadata_folder(tmp_path):
+    # Régression : « Nouveau » puis création → SOURCE_CHANGED systématique, car la
+    # préparation crée <root>/.openbrep/ et le snapshot lisait alors un disque vide.
+    project = HSFProject.create_new('Untitled GDL Object', str(tmp_path))
+    snapshot = capture_snapshot(project, 1)
+    (project.root / '.openbrep').mkdir(parents=True)
+    (project.root / '.openbrep' / 'tasks.jsonl').write_text('{}\n')
+
+    assert snapshot.matches(project, 1)
+    assert capture_snapshot(project, 1).context_fingerprint == snapshot.context_fingerprint

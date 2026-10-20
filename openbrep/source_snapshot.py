@@ -142,8 +142,12 @@ def capture_snapshot(project: HSFProject | None, project_epoch: int, draft_scrip
     effective = copy.deepcopy(project)
     files = {}
     saved = None
-    if project is not None and project.root.is_dir():
-        files = {name: (project.root / name).read_bytes() for name in collect_managed_source_files(project.root)}
+    # Un projet « Nouveau » jamais enregistré n'a pas de source sur disque, même
+    # si son dossier existe déjà (la préparation y crée .openbrep/ pour le suivi
+    # des tâches) : lire ce dossier vide ferait échouer chaque tour en SOURCE_CHANGED.
+    managed = collect_managed_source_files(project.root) if project is not None and project.root.is_dir() else []
+    if managed:
+        files = {name: (project.root / name).read_bytes() for name in managed}
         # Adopted ObjectSpec is project context rather than editable HSF source,
         # but changing it still invalidates a snapshot/Plan binding.
         from openbrep.contracts.project_store import CONTRACT_RELATIVE_PATH
