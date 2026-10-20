@@ -217,10 +217,10 @@ def test_user_summary_labels_degraded_plan_and_surfaces_coverage_gaps():
 
     summary = plan.to_user_summary(artifact.to_dict())
 
-    assert "降级候选" in summary
-    assert "不能视为完整 typed Plan" in summary
-    assert "要求覆盖" not in summary
-    assert "Plan hash" in summary
+    assert "version simplifiée" in summary
+    assert "ce n’est pas un plan complet" in summary
+    assert "Couverture des exigences" not in summary
+    assert "Empreinte du plan" in summary
     assert "未提供可验证的构件/参数/脚本/检查/场景映射" in summary
 
 
@@ -230,8 +230,8 @@ def test_user_summary_distinguishes_validated_candidate_from_delivery_verificati
 
     summary = plan.to_user_summary(artifact.to_dict())
 
-    assert "结构化计划已通过合同校验" in summary
-    assert "不代表生成结果已验证" in summary
+    assert "plan structuré validé" in summary
+    assert "le résultat généré reste à vérifier" in summary
     assert "p.door_count" in summary  # requirement trace retains stable internal IDs
     assert "door_count" in summary
     assert artifact.execution_plan["plan_hash"] in summary

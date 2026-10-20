@@ -110,52 +110,52 @@ class GDLObjectPlan:
 
     def to_user_summary(self, planning_artifact: dict[str, Any] | None = None) -> str:
         parts = [
-            "### 生成前规划",
-            f"- 对象类型：{self.object_type}",
+            "### Planification avant génération",
+            f"- Type d’objet : {self.object_type}",
         ]
         if self.degraded:
-            parts.append("- 规划状态：降级候选；部分结构化依据缺失，不能视为完整 typed Plan。")
+            parts.append("- État du plan : version simplifiée ; certains éléments structurés manquent, ce n’est pas un plan complet.")
         elif planning_artifact and planning_artifact.get("status") == "needs_input":
-            parts.append("- 规划状态：需要补充确认；存在冲突或输入歧义。")
+            parts.append("- État du plan : à préciser ; la demande contient une contradiction ou une ambiguïté.")
         elif planning_artifact and planning_artifact.get("status") == "degraded":
-            parts.append("- 规划状态：降级候选；部分要求尚未映射或验证。")
+            parts.append("- État du plan : version simplifiée ; certaines exigences ne sont pas encore reliées ou vérifiées.")
         elif planning_artifact and planning_artifact.get("status") == "ready":
-            parts.append("- 规划状态：结构化计划已通过合同校验；这不代表生成结果已验证。")
+            parts.append("- État du plan : plan structuré validé ; le résultat généré reste à vérifier.")
         if self.geometry:
-            parts.append(f"- 几何组成：{'；'.join(self.geometry[:4])}")
+            parts.append(f"- Géométrie : {' ; '.join(self.geometry[:4])}")
         if self.parameters:
-            parts.append(f"- 参数重点：{'；'.join(self.parameters[:5])}")
+            parts.append(f"- Paramètres clés : {' ; '.join(self.parameters[:5])}")
         if self.command_candidates:
-            parts.append(f"- 命令选择：{'；'.join(self.command_candidates[:5])}")
+            parts.append(f"- Commandes choisies : {' ; '.join(self.command_candidates[:5])}")
         if self.script_3d_strategy:
-            parts.append(f"- 3D 策略：{'；'.join(self.script_3d_strategy[:3])}")
+            parts.append(f"- Stratégie 3D : {' ; '.join(self.script_3d_strategy[:3])}")
         if self.script_2d_strategy:
-            parts.append(f"- 2D 策略：{'；'.join(self.script_2d_strategy[:2])}")
+            parts.append(f"- Stratégie 2D : {' ; '.join(self.script_2d_strategy[:2])}")
         if self.knowledge_sources:
-            parts.append(f"- 本次使用知识：{'；'.join(self.knowledge_sources[:8])}")
+            parts.append(f"- Connaissances utilisées : {' ; '.join(self.knowledge_sources[:8])}")
         if planning_artifact:
             spec = planning_artifact.get("candidate_spec") or {}
             params = spec.get("params") if isinstance(spec, dict) else []
             if params:
-                parts.append("- 候选参数：" + "；".join(
+                parts.append("- Paramètres proposés : " + " ; ".join(
                     f"{item.get('gdl_name')} ({item.get('type')}{', ' + str(item.get('unit')) if item.get('unit') else ''})"
                     for item in params if isinstance(item, dict)
                 ))
             execution = planning_artifact.get("execution_plan") or {}
             mappings = execution.get("requirement_mappings") if isinstance(execution, dict) else []
             if mappings:
-                parts.append("- 要求覆盖：" + "；".join(
-                    f"{item.get('requirement_id')} → 部件 {item.get('part_refs') or '无'} / 参数 {item.get('parameter_refs') or '无'} / 脚本 {item.get('script_refs') or '无'} / 场景 {item.get('scenario_refs') or '无'}"
+                parts.append("- Couverture des exigences : " + " ; ".join(
+                    f"{item.get('requirement_id')} → pièces {item.get('part_refs') or 'aucune'} / paramètres {item.get('parameter_refs') or 'aucun'} / scripts {item.get('script_refs') or 'aucun'} / scénarios {item.get('scenario_refs') or 'aucun'}"
                     for item in mappings if isinstance(item, dict)
                 ))
             issues = planning_artifact.get("issues") or []
             if issues:
-                parts.append("- 规划缺口：" + "；".join(
-                    f"{item.get('field_path') or 'plan'}：{item.get('message') or item.get('code') or '未说明'}"
+                parts.append("- Points manquants : " + " ; ".join(
+                    f"{item.get('field_path') or 'plan'} : {item.get('message') or item.get('code') or 'non précisé'}"
                     for item in issues if isinstance(item, dict)
                 ))
             if isinstance(execution, dict) and execution.get("plan_hash"):
-                parts.append(f"- Plan hash：{execution['plan_hash']}")
+                parts.append(f"- Empreinte du plan : {execution['plan_hash']}")
         return "\n".join(parts)
 
 

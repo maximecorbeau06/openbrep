@@ -1331,7 +1331,7 @@ class TaskPipeline:
                 if confirmed:
                     from openbrep.vision.modeling_plan import ModelingPlan
 
-                    on_event("status", {"message": "正在按已确认的读图结果生成…"})
+                    on_event("status", {"message": "Génération à partir de la lecture d’image validée…"})
                     # U04-A：确认重发 payload 与提取同口径——schema 严格校验，
                     # 坏字段/未知 schema 不作为已验证事实渲染（旧 payload 可读）。
                     from openbrep.vision.harness import apply_field_validation
@@ -1360,7 +1360,7 @@ class TaskPipeline:
                         confirmed_by_image.append(entry)
                         plans.append(apply_field_validation(ModelingPlan.from_dict(entry)))
                 else:
-                    on_event("status", {"message": f"正在分析 {len(multi_images)} 张参考图…"})
+                    on_event("status", {"message": f"Analyse de {len(multi_images)} images de référence…"})
                     # P1-B：显式效果契约存在时注入项目领域提示（GUI 门控，
                     # benchmark/CLI 不传 → 分型与 prompt 与基线逐字节一致）。
                     from openbrep.runtime.effect_contract import normalize_effect_contract
@@ -1555,7 +1555,7 @@ class TaskPipeline:
         object_plan = None
         planning_artifact = None
         if request.intent in ("CREATE", "IMAGE"):
-            on_event("status", {"message": "正在规划 GDL 对象结构…"})
+            on_event("status", {"message": "Planification de la structure de l’objet GDL…"})
             object_plan = plan_gdl_object(
                 llm,
                 instruction=enriched_instruction,
@@ -1740,7 +1740,7 @@ class TaskPipeline:
             _graph_constraint = _graph_mgr.build_constraint_prompt(enriched_instruction, log_miss=True)
             if _graph_constraint:
                 enriched_instruction = f"{enriched_instruction}\n\n{_graph_constraint}"
-                on_event("status", {"message": "📐 图谱概念约束已注入"})
+                on_event("status", {"message": "📐 Contraintes du graphe de connaissances ajoutées"})
                 logger.info("[graph] concept constraint injected for intent: %s", user_input[:60])
         except Exception as _graph_exc:
             logger.debug("Graph concept constraint injection skipped: %s", _graph_exc)
@@ -1844,7 +1844,7 @@ class TaskPipeline:
         时调用方必须原样返回。
         """
         if not cleaned and request.intent in ("CREATE", "IMAGE"):
-            on_event("status", {"message": "⚠️ 模型首轮未输出 [FILE:] 代码块，正在重试…"})
+            on_event("status", {"message": "⚠️ Pas de bloc de code [FILE:] au premier essai, nouvelle tentative…"})
             logger.warning(
                 "[create-zero-output] intent=%s first round produced no [FILE:] blocks; retrying once",
                 request.intent,
@@ -1879,11 +1879,11 @@ class TaskPipeline:
                     lint_summary = "\n\n".join(
                         p for p in [lint_summary, retry_lint] if p
                     )
-                on_event("status", {"message": "✅ 重试后模型已输出 [FILE:] 代码块"})
+                on_event("status", {"message": "✅ Bloc de code [FILE:] obtenu après la nouvelle tentative"})
                 logger.info("[create-zero-output] retry round produced code; continuing")
             else:
                 model_text = retry_plain or plain_text
-                on_event("status", {"message": "❌ 重试后仍无代码产出，任务以硬失败结束"})
+                on_event("status", {"message": "❌ Toujours aucun code après la nouvelle tentative : tâche arrêtée en échec"})
                 logger.warning(
                     "[create-zero-output] retry round also produced no [FILE:] blocks; hard fail"
                 )
@@ -1933,7 +1933,7 @@ class TaskPipeline:
         ]
         if undef_errors:
             error_detail = "\n".join(f"  - [{e.file}] {e.detail}" for e in undef_errors)
-            on_event("status", {"message": f"🔍 发现 {len(undef_errors)} 个变量问题，自动修复中…"})
+            on_event("status", {"message": f"🔍 {len(undef_errors)} problème(s) de variable trouvé(s), correction automatique…"})
             logger.info("Static check found %d undefined/forward-decl errors; triggering repair", len(undef_errors))
             repair_instruction = (
                 f"{enriched_instruction}\n\n"
@@ -2368,7 +2368,7 @@ class TaskPipeline:
             if early_stop is not None:
                 return early_stop
         if planning_artifact and planning_artifact.get("status") == "needs_input":
-            on_event("status", {"stage": "plan", "message": "计划依据存在冲突，需要补充确认后再生成。"})
+            on_event("status", {"stage": "plan", "message": "Le plan contient des éléments contradictoires : précise ta demande avant la génération."})
             return TaskResult(
                 success=True,
                 intent=request.intent or "CREATE",
@@ -2694,8 +2694,8 @@ class TaskPipeline:
             return None
 
         on_event = request.on_event or (lambda *args: None)
-        on_event("status", {"stage": "understand", "message": "🤔 正在理解你的修改意图…"})
-        on_event("status", {"stage": "locate", "message": f"🎯 定位到参数：{micro.param_name}"})
+        on_event("status", {"stage": "understand", "message": "🤔 Analyse de la modification demandée…"})
+        on_event("status", {"stage": "locate", "message": f"🎯 Paramètre concerné : {micro.param_name}"})
         on_event("plan", {
             "intent_summary": f"把参数 {micro.param_name} 从 {micro.old_value} 改为 {micro.new_value}",
             "affected_files": ["paramlist.xml"],
@@ -2743,7 +2743,7 @@ class TaskPipeline:
                     "changed_files": [],
                 },
             )
-        on_event("status", {"stage": "modify", "message": f"✏️ 已更新参数 {micro.param_name}"})
+        on_event("status", {"stage": "modify", "message": f"✏️ Paramètre {micro.param_name} mis à jour"})
 
         # 修改后预览摘要（before 已在应用前取）
         from openbrep.runtime.modify_acceptance import preview_geometry_summary
@@ -2859,7 +2859,7 @@ class TaskPipeline:
             return None
 
         on_event = request.on_event or (lambda *args: None)
-        on_event("status", {"stage": "understand", "message": "🤔 正在理解你的修改意图…"})
+        on_event("status", {"stage": "understand", "message": "🤔 Analyse de la modification demandée…"})
 
         # 一次 LLM 调用做意图解析；失败/校验不过即回落，不重试
         llm = self._make_llm(request)
@@ -2914,7 +2914,7 @@ class TaskPipeline:
             return None
 
         on_event = request.on_event or (lambda *args: None)
-        on_event("status", {"stage": "understand", "message": "🤔 正在检索技能模板…"})
+        on_event("status", {"stage": "understand", "message": "🤔 Recherche d’un modèle de compétence…"})
 
         # loader 未建则惰性建（与 _load_skills 同源）；LLM 只在占位符需要填值时构造
         if self._skills_loader is None:
@@ -2974,7 +2974,7 @@ class TaskPipeline:
         """
         from openbrep.runtime.param_modify import apply_param_modify
 
-        on_event("status", {"stage": "locate", "message": "🎯 已解析为参数操作：" + "；".join(op_lines)})
+        on_event("status", {"stage": "locate", "message": "🎯 Opérations sur les paramètres : " + " ; ".join(op_lines)})
         on_event("plan", {
             "intent_summary": "；".join(op_lines),
             "affected_files": ["paramlist.xml"] + [
@@ -3023,7 +3023,7 @@ class TaskPipeline:
                 )
             # 守护回滚：计划外文件被改动，按"识别不出"回落 LLM 路径
             return None
-        on_event("status", {"stage": "modify", "message": "✏️ 已应用参数操作：" + "；".join(op_lines)})
+        on_event("status", {"stage": "modify", "message": "✏️ Opérations appliquées : " + " ; ".join(op_lines)})
 
         compile_result: Optional[CompileResult] = None
         try:
@@ -3278,7 +3278,7 @@ class TaskPipeline:
                 instruction=clean_instruction,
                 project=project,
             )
-            on_event("status", {"message": f"🔧 编译失败（第 {_modify_repair_round} 轮），正在自动修复…"})
+            on_event("status", {"message": f"🔧 Échec de compilation (tour {_modify_repair_round}), correction automatique…"})
             logger.info(
                 "Compile failed; triggering auto-repair round %d/%d. error_log=%d chars",
                 _modify_repair_round, _MAX_MODIFY_REPAIR, len(error_log),
@@ -4046,7 +4046,7 @@ def _run_gdl_linter(cleaned: dict[str, str], on_event: Callable | None = None) -
             summary_lines.append(f"- {path}: 修复 {result.fix_count} 处（{', '.join(rules)}）")
 
     if fixed_total and on_event:
-        on_event("status", {"message": f"🔧 Linter 自动修复了 {fixed_total} 个问题"})
+        on_event("status", {"message": f"🔧 Vérificateur : {fixed_total} problème(s) corrigé(s) automatiquement"})
 
     if not fixed_total:
         return updated, ""
