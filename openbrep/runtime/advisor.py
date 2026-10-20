@@ -109,13 +109,13 @@ def parse_advisor_output(content: str, report: InspectionReport, *, mode='consul
             raise ValueError('Invalid plan finding reference')
     parts = [data['conclusion']]
     if facts:
-        parts.append('依据：\n' + '\n'.join(item['text'] for item in facts))
+        parts.append('Éléments vérifiés :\n' + '\n'.join(item['text'] for item in facts))
     if suggestions:
-        parts.append('建议：\n' + '\n'.join(suggestions))
+        parts.append('Suggestions :\n' + '\n'.join(suggestions))
     if tradeoffs:
-        parts.append('取舍：\n' + '\n'.join(tradeoffs))
+        parts.append('Compromis :\n' + '\n'.join(tradeoffs))
     if assumptions:
-        parts.append('假设（未验证）：\n' + '\n'.join(assumptions))
+        parts.append('Hypothèses (non vérifiées) :\n' + '\n'.join(assumptions))
     if re.search(r'已修改|已保存|编译通过|验证通过|已交付', data['conclusion']):
         raise ValueError('Read-only advisor cannot claim execution or verification')
     if re.search(r'检查发现|已检查|检查证明', data['conclusion']) and not facts:

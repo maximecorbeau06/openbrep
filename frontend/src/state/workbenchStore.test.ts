@@ -3763,7 +3763,7 @@ test('sendChat modify requests plan and awaits confirmation (V3)', async () => {
   expect(state.pendingPlan).toEqual(PENDING_PLAN)
   expect(state.assistantBusy).toBe(false)
   const last = state.assistantMessages.at(-1)
-  expect(last?.content).toContain('修改计划已生成')
+  expect(last?.content).toContain('Plan de modification prêt')
   expect(last?.thinkingSteps?.[0]?.type).toBe('plan')
   expect(last?.thinkingSteps?.[0]?.userVisibleChanges).toEqual(PENDING_PLAN.user_visible_changes)
 })
@@ -4245,7 +4245,7 @@ test('create with image sets pendingExtraction when awaiting_extraction_confirma
   expect(state.pendingExtraction?.message).toBe('帮我按图生成漏窗[图1]')
   expect(state.assistantBusy).toBe(false)
   // pending 占位消息保留 Thinking... 前缀（确认重发时被替换）
-  expect(state.assistantMessages.at(-1)?.content).toContain('读图结果已生成')
+  expect(state.assistantMessages.at(-1)?.content).toContain('Lecture de l’image prête')
   // 未生成任何项目
   expect(state.project).toBeNull()
 })

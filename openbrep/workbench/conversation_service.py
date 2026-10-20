@@ -137,7 +137,7 @@ class WorkbenchConversationService:
                             knowledge=knowledge.generation_context + load_project_skills(context, message), images=images, should_cancel=should_cancel)
         except Exception:
             turn.state = 'failed'
-            return self._failure(turn, 'PLAN_GENERATION_FAILED' if turn.policy.mode == 'plan' else 'ADVICE_FAILED', '计划生成失败，项目未修改。' if turn.policy.mode == 'plan' else '无法完成本轮顾问回答；项目未修改。')
+            return self._failure(turn, 'PLAN_GENERATION_FAILED' if turn.policy.mode == 'plan' else 'ADVICE_FAILED', 'La génération du plan a échoué ; projet non modifié.' if turn.policy.mode == 'plan' else 'Impossible de terminer la réponse ; projet non modifié.')
         if answer.assumptions:
             self.working_intent = reduce_intent(self.working_intent, {'kind': 'assumptions', 'message_id': turn.turn_id, 'values': list(answer.assumptions)})
         proposals = []
@@ -178,7 +178,7 @@ class WorkbenchConversationService:
                 turn.state = 'cancelled'
                 turn.result = self._response(turn, 'cancelled', cancelled=True)
                 self._record_task_terminal(turn, kind='cancelled', state='cancelled',
-                                           message='项目会话已切换或历史已清除，任务终止。')
+                                           message='Projet changé ou historique effacé : tâche arrêtée.')
         self.pending_turn_id = None
         self.selected_proposal = None
         self.proposals.clear()
@@ -280,16 +280,16 @@ class WorkbenchConversationService:
         if turn is None or not isinstance(result, dict):
             return
         if result.get('result_kind') == 'awaiting_confirmation':
-            self._record_task_stage(turn, stage='plan_gate', message='修改计划已生成，待用户确认。')
+            self._record_task_stage(turn, stage='plan_gate', message='Plan de modification prêt, en attente de ta validation.')
             return
         if result.get('result_kind') == 'advice':
             reply = ((result.get('assistant') or {}).get('reply') or '')
             self._record_task_terminal(turn, kind='completed', state='advice',
-                                       message=str(reply)[:200] or '咨询完成。')
+                                       message=str(reply)[:200] or 'Réponse terminée.')
             return
         if result.get('result_kind') == 'failed':
             self._record_task_terminal(turn, kind='failed', error_code=result.get('code'),
-                                       message=str(result.get('error') or '本轮失败。'))
+                                       message=str(result.get('error') or 'Échec de ce tour.'))
 
     def route(self, body: dict):
         # The worker owns the same session lock during the real work, not merely
@@ -306,7 +306,7 @@ class WorkbenchConversationService:
                         result = self.handle(request, should_cancel=cancel.is_set, on_event=emit)
                     emit('done', result)
                 except Exception:
-                    emit('done', self._failure(None, 'TURN_FAILED', '本轮处理失败。'))
+                    emit('done', self._failure(None, 'TURN_FAILED', 'Le traitement de ce tour a échoué.'))
                 finally:
                     events.put(None)
             def stream():
@@ -369,7 +369,7 @@ class WorkbenchConversationService:
         self._refresh_project_from_disk()
         if on_event:
             # 卡05：prepare 流式反馈——语义路由等待
-            on_event('status', {'stage': 'route', 'message': '正在判断本轮执行方式…'})
+            on_event('status', {'stage': 'route', 'message': 'Analyse de la demande…'})
         if should_cancel and should_cancel():
             return self._response(None, 'cancelled', cancelled=True)
         if re.search(r'撤回|取消.*限制|withdraw', message, re.I):
@@ -389,7 +389,7 @@ class WorkbenchConversationService:
             bool(self.session.config.llm.confirm_before_execute),
         )
         if type(confirm_before_execute) is not bool:
-            return self._failure(None, 'INVALID_TURN', 'confirm_before_execute 必须是布尔值。')
+            return self._failure(None, 'INVALID_TURN', 'confirm_before_execute doit être vrai ou faux.')
         if confirm_before_execute and policy.mode == 'execute':
             # Approval is a separate execution policy: keep routing and intent,
             # but prepare a plan and stop before the mutating execution path.
@@ -411,7 +411,7 @@ class WorkbenchConversationService:
                               message=message, requested_mode=policy.mode)
         if on_event:
             on_event('status', {'stage': policy.mode,
-                                'message': '本轮将执行修改。' if policy.mode == 'execute' else '正在准备回答…',
+                                'message': 'Les modifications vont être appliquées.' if policy.mode == 'execute' else 'Préparation de la réponse…',
                                 'turn_id': turn.turn_id})
         while len(self.turns) > MAX_RECENT_TURNS:
             old_id, old = self.turns.popitem(last=False)
@@ -425,7 +425,7 @@ class WorkbenchConversationService:
             turn.state = 'cancelled'
             turn.result = self._response(turn, 'cancelled', cancelled=True)
             self._record_task_terminal(turn, kind='cancelled', state='cancelled',
-                                       message='计划已取消。')
+                                       message='Plan annulé.')
             return copy.deepcopy(turn.result)
         proposal_id = body.get('proposal_id')
         if not proposal_id and reference and self.proposals:
@@ -451,8 +451,8 @@ class WorkbenchConversationService:
                 self.selected_proposal = copy.deepcopy(proposal)
                 self.working_intent = reduce_intent(self.working_intent, {'kind': 'select', 'proposal_id': proposal_id, 'message_id': turn.turn_id})
                 turn.state = 'completed'
-                turn.result = self._response(turn, 'advice', assistant={'kind': 'advisor', 'reply': '已选择该方案；尚未执行。'})
-                self._record_task_terminal(turn, kind='completed', state='advice', message='已选择该方案；尚未执行。')
+                turn.result = self._response(turn, 'advice', assistant={'kind': 'advisor', 'reply': 'Option choisie ; pas encore appliquée.'})
+                self._record_task_terminal(turn, kind='completed', state='advice', message='Option choisie ; pas encore appliquée.')
                 return copy.deepcopy(turn.result)
             if policy.mode == 'execute' and (body.get('proposal_action') == 'execute' or reference):
                 if proposal['source_version']['context_fingerprint'] != snapshot.context_fingerprint:
@@ -498,7 +498,7 @@ class WorkbenchConversationService:
             self.working_intent = reduce_intent(self.working_intent, {'kind': 'set_goal', 'task_id': turn.turn_id, 'goal': turn.body['message']})
             turn.working_intent_version = self.working_intent['version']
             turn.result = self._response(turn, 'ready_to_execute', mode='execute', task_intent=policy.task_intent, source_version=snapshot.source_version)
-            self._record_task_stage(turn, stage='ready', message='任务已就绪，等待执行。')
+            self._record_task_stage(turn, stage='ready', message='Tâche prête, en attente d’exécution.')
         else:
             turn._prepare_on_event = on_event
             turn.result = self._prepare_advice(turn, should_cancel=should_cancel)
@@ -506,9 +506,9 @@ class WorkbenchConversationService:
             if on_event:
                 result_kind = turn.result.get('result_kind')
                 if result_kind == 'advice':
-                    on_event('status', {'stage': 'done', 'message': '回答完成。', 'turn_id': turn.turn_id})
+                    on_event('status', {'stage': 'done', 'message': 'Réponse terminée.', 'turn_id': turn.turn_id})
                 elif result_kind == 'awaiting_confirmation':
-                    on_event('status', {'stage': 'plan_gate', 'message': '修改计划已生成，待确认。', 'turn_id': turn.turn_id})
+                    on_event('status', {'stage': 'plan_gate', 'message': 'Plan de modification prêt, à valider.', 'turn_id': turn.turn_id})
         if should_cancel and should_cancel():
             turn.state = 'cancelled'
             turn.result = self._response(turn, 'cancelled', cancelled=True)
@@ -526,11 +526,11 @@ class WorkbenchConversationService:
             return self._failure(turn, 'ADVISOR_UNAVAILABLE')
         # 卡04：prepare 阶段流式可观测（咨询/计划生成中）
         self._record_task_stage(turn, stage='advice' if turn.policy.mode != 'plan' else 'plan',
-                                message='正在生成顾问回答…' if turn.policy.mode != 'plan' else '正在生成修改计划…')
+                                message='Rédaction de la réponse…' if turn.policy.mode != 'plan' else 'Rédaction du plan de modification…')
         on_event = getattr(turn, '_prepare_on_event', None)
         if callable(on_event):
             on_event('status', {'stage': 'advice' if turn.policy.mode != 'plan' else 'plan',
-                                'message': '正在生成顾问回答…' if turn.policy.mode != 'plan' else '正在生成修改计划…'})
+                                'message': 'Rédaction de la réponse…' if turn.policy.mode != 'plan' else 'Rédaction du plan de modification…'})
         if turn.policy.mode == 'plan' and (
             turn.policy.task_intent in {'CREATE', 'IMAGE'}
             or (self.session.project is None and turn.policy.task_intent == 'MODIFY')
@@ -549,7 +549,7 @@ class WorkbenchConversationService:
             return {**self._failure(turn, 'PLAN_VERSION_MISMATCH'), 'pending_plan': copy.deepcopy(turn.plan)}
         instruction = body.get('revision_instruction')
         if not isinstance(instruction, str) or not instruction.strip() or len(instruction) > 2000:
-            return self._failure(turn, 'INVALID_PLAN_REVISION', '请填写不超过 2000 字的计划修改要求。')
+            return self._failure(turn, 'INVALID_PLAN_REVISION', 'Décris la modification du plan en 2000 caractères maximum.')
         if turn.working_intent_version != self.working_intent['version'] or not turn.snapshot.matches(
             self.session.project, self.session.project_epoch, self._dependency_version()
         ):
@@ -631,7 +631,7 @@ class WorkbenchConversationService:
         steps = (execution.get('steps') or []) if isinstance(execution, dict) else []
         requirements = (execution.get('requirements') or []) if isinstance(execution, dict) else []
         plan = {
-            'intent_summary': f"生成{object_plan.get('object_type') or 'GDL 构件'}",
+            'intent_summary': f"Créer {object_plan.get('object_type') or 'un objet GDL'}",
             'user_visible_changes': list(object_plan.get('geometry') or [])[:12],
             'change_delta': list(object_plan.get('geometry_parts') or [])[:12],
             'preserved_constraints': list(turn.policy.constraints),
@@ -639,7 +639,7 @@ class WorkbenchConversationService:
                 str(step.get('target')) for step in steps
                 if isinstance(step, dict) and step.get('kind') == 'modify_script' and step.get('target')
             )),
-            'risk': '；'.join(object_plan.get('risks') or []) or ('计划需要补充信息' if artifact.get('status') == 'needs_input' else '未识别到额外风险'),
+            'risk': '；'.join(object_plan.get('risks') or []) or ('Le plan demande des précisions' if artifact.get('status') == 'needs_input' else 'Aucun risque particulier identifié'),
             'constraints': list(turn.policy.constraints),
             'assumptions': list(object_plan.get('assumptions') or []),
             'acceptance_criteria': [str(item.get('text')) for item in requirements if isinstance(item, dict) and item.get('text')],
@@ -694,7 +694,7 @@ class WorkbenchConversationService:
             self._discard_prepared_typed_plan(turn)
             turn.state = 'cancelled'
             turn.result = self._response(turn, 'cancelled', cancelled=True)
-            self._record_task_terminal(turn, kind='cancelled', state='cancelled', message='用户取消了本次任务。')
+            self._record_task_terminal(turn, kind='cancelled', state='cancelled', message='Tâche annulée.')
             if self.pending_turn_id == turn.turn_id:
                 self.pending_turn_id = None
             return _with_recording(copy.deepcopy(turn.result))
@@ -720,13 +720,13 @@ class WorkbenchConversationService:
                 return {**self._failure(turn, 'PLAN_VERSION_MISMATCH'), 'pending_plan': copy.deepcopy(turn.plan)}
             typed = turn.plan.get('typed_plan')
             if isinstance(typed, dict) and typed.get('status') == 'needs_input':
-                return self._failure(turn, 'PLAN_NEEDS_INPUT', '计划依据需要澄清；当前计划不能执行。请取消后补充要求重新规划。')
+                return self._failure(turn, 'PLAN_NEEDS_INPUT', 'Le plan doit être précisé avant d’être appliqué. Annule-le puis complète ta demande.')
         if not turn.snapshot.matches(self.session.project, self.session.project_epoch, self._dependency_version()):
             self._discard_prepared_typed_plan(turn)
             turn.state = 'stale'
             turn.result = self._failure(turn, 'PLAN_STALE' if turn.policy.mode == 'plan' else 'SOURCE_CHANGED')
             self._record_task_stage(turn, kind='source_changed', stage=None,
-                                    message='源码已变化，旧任务令牌失效。')
+                                    message='Le code a changé depuis : cette tâche n’est plus valable.')
             if turn.plan:
                 turn.result['pending_plan'] = copy.deepcopy(turn.plan)
             return copy.deepcopy(turn.result)
@@ -743,14 +743,14 @@ class WorkbenchConversationService:
             tokens = [micro.param_name, param.description] + {'A': ['宽度', 'width'], 'B': ['深度', 'depth'], 'ZZYZX': ['高度', 'height']}.get(micro.param_name, [])
             protected = [c['value'] for c in self.working_intent['constraints'] if c['status'] == 'active']
             if any(re.search(r'不改|不要改|保持|do not|don.t|unchanged', c, re.I) and any(token and token.lower() in c.lower() for token in tokens) for c in protected):
-                return self._failure(turn, 'CONSTRAINT_CONFLICT', '参数修改与仍有效的用户约束冲突；请明确撤回该约束。')
+                return self._failure(turn, 'CONSTRAINT_CONFLICT', 'Cette modification de paramètre contredit une consigne encore active ; retire d’abord cette consigne.')
         if not any(t['id'] == turn.turn_id for t in self.working_intent['tasks']):
             self.working_intent = reduce_intent(self.working_intent, {'kind': 'start_task', 'task_id': turn.turn_id, 'goal': turn.body['message'], 'task_intent': turn.policy.task_intent})
         self.active_turn_id = turn.turn_id
         turn.state = 'executing'
         def emit(kind, data):
             if kind == 'plan':
-                kind, data = 'status', {'stage': 'plan', 'message': '正在准备执行步骤…'}
+                kind, data = 'status', {'stage': 'plan', 'message': 'Préparation des étapes…'}
             # RF02/RF03：事件先规范落盘，再以同一 event_id/seq/timestamp 广播
             # （canonical kind：preparing/tool_started/tool_finished/verification/
             #  public_commentary——前端 live 与复盘恢复消费同一事件形状）。
@@ -849,7 +849,7 @@ class WorkbenchConversationService:
             turn.state = 'failed'
             turn.result = self._failure(turn, 'EXECUTION_FAILED')
             self._record_task_terminal(turn, kind='failed', error_code='EXECUTION_FAILED',
-                                       message='执行过程中发生错误。')
+                                       message='Une erreur est survenue pendant l’exécution.')
         finally:
             self.active_turn_id = None
             if self.pending_turn_id == turn.turn_id:

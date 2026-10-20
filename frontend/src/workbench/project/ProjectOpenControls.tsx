@@ -86,7 +86,7 @@ export function ProjectOpenControls({
           </label>
           <div className="project-menu-row">
             <button type="submit" disabled={controlsLocked || path.trim().length === 0}>
-              {loading ? '...' : 'Open'}
+              {loading ? '...' : 'Ouvrir'}
             </button>
             <button
               type="button"
@@ -95,7 +95,7 @@ export function ProjectOpenControls({
               title={t('projectMenu.browseTitle')}
               aria-label={t('projectMenu.browseTitle')}
             >
-              {loading ? 'Choosing...' : 'Browse'}
+              {loading ? 'Choix…' : 'Parcourir'}
             </button>
           </div>
           <select

@@ -31,11 +31,11 @@ const PREVIEW_GHOST_LABEL_PRE_TASK: PreviewGhostLabel = 'preview.ghost.preTask'
 const ASSISTANT_PENDING_PREFIX = 'Thinking...'
 // 计划确认门（V3）的待确认/执行中内容：保留 Thinking... 前缀，
 // 让 replacePendingAssistantMessage 能正确替换上一条 pending 消息
-const PLAN_PENDING_CONTENT = `${ASSISTANT_PENDING_PREFIX}\n📝 修改计划已生成，请确认后执行。`
-const PLAN_EXECUTING_CONTENT = `${ASSISTANT_PENDING_PREFIX}\n⏳ 正在按已确认的计划执行修改…`
+const PLAN_PENDING_CONTENT = `${ASSISTANT_PENDING_PREFIX}\n📝 Plan de modification prêt : valide-le pour l’appliquer.`
+const PLAN_EXECUTING_CONTENT = `${ASSISTANT_PENDING_PREFIX}\n⏳ Application du plan validé…`
 // 提取确认门（P5d-2）的待确认内容：保留 Thinking... 前缀，让 replacePendingAssistantMessage 能替换
-const EXTRACTION_PENDING_CONTENT = `${ASSISTANT_PENDING_PREFIX}\n🖼️ 读图结果已生成，请确认或编辑后继续。`
-const EXTRACTION_EXECUTING_CONTENT = `${ASSISTANT_PENDING_PREFIX}\n⏳ 正在按已确认的读图结果生成…`
+const EXTRACTION_PENDING_CONTENT = `${ASSISTANT_PENDING_PREFIX}\n🖼️ Lecture de l’image prête : valide ou corrige pour continuer.`
+const EXTRACTION_EXECUTING_CONTENT = `${ASSISTANT_PENDING_PREFIX}\n⏳ Génération à partir de la lecture validée…`
 const EXTRACTION_CANCELLED_CONTENT = () => tNow('assistant.msg.extractionCancelled')
 const INTERRUPTED_CONTENT = () => tNow('assistant.msg.interrupted')
 
