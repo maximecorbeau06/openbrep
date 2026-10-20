@@ -139,7 +139,7 @@ PROVIDER_PROFILES: tuple[ProviderProfile, ...] = (
         env_vars=("ANTHROPIC_API_KEY",),
         provider_key_names=("anthropic", "claude", "anthropic_api_key"),
         console_url="https://console.anthropic.com/settings/keys",
-        native_prefix="claude/",
+        native_prefix="anthropic/",
     ),
     ProviderProfile(
         name="openai",

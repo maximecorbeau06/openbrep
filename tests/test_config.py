@@ -518,10 +518,11 @@ class TestProviderRegistry(_CleanEnvMixin, unittest.TestCase):
         self.assertEqual(model_to_provider("qwen-max"), "aliyun")
         self.assertEqual(model_to_provider("ymg-gpt-5.3-codex"), "custom")
 
-    def test_anthropic_native_prefix_is_claude_slash(self):
-        # litellm 官方 claude 模型历史解析为 claude/claude-x，不能改成 anthropic/
+    def test_anthropic_native_prefix_is_anthropic_slash(self):
+        # litellm 1.105 ne reconnaît plus « claude/claude-x » (BadRequestError
+        # « LLM Provider NOT provided ») ; le fournisseur natif est « anthropic/ ».
         profile = provider_profile_for_model("claude-sonnet-4-20250514")
-        self.assertEqual(profile.native_prefix, "claude/")
+        self.assertEqual(profile.native_prefix, "anthropic/")
 
     def test_short_openai_prefixes_do_not_overmatch(self):
         # "o1"/"o3"/"o4" 是短前缀，长前缀优先排序必须保证它们不抢走 qwq/qwen
