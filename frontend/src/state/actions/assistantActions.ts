@@ -590,7 +590,11 @@ export function createAssistantActions({ api, get, set }: WorkbenchActionContext
       return
     }
     if (result.result_kind === 'execution' && result.project && result.parameters && result.preview) {
-      set(hydrateSnapshot(result as import('../../api/types').WorkbenchSnapshot, get().compilerSettings, get().llmSettings))
+      // Une création bascule le serveur sur le nouveau projet : project_epoch est
+      // celui du début du tour, current_project_epoch celui du projet livré.
+      // Adopter l'ancien faisait échouer chaque tour suivant en PROJECT_CHANGED.
+      const delivered = { ...result, project_epoch: result.current_project_epoch ?? result.project_epoch }
+      set(hydrateSnapshot(delivered as import('../../api/types').WorkbenchSnapshot, get().compilerSettings, get().llmSettings))
       await get().loadScripts()
       await get().loadRevisions()
       await get().loadRecentProjects()

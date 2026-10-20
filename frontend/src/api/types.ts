@@ -1786,6 +1786,8 @@ export type ConversationTurnResult = GenerateResult & Partial<Omit<WorkbenchSnap
   /** RF03：执行事件记录状态（degraded = 后端落盘失败） */
   events_recording?: { status: string; error?: string | null }
   project_epoch?: number
+  /** Identité serveur au moment de la réponse (une création change de projet). */
+  current_project_epoch?: number
   task_intent?: string
   code?: string
   advisor?: AssistantMessage['advisor']

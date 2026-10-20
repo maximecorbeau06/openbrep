@@ -4923,6 +4923,20 @@ test('unified execute flushes only after prepare and reuses server token', async
   expect(calls.slice(0, 3)).toEqual(['prepare', 'flush', 'execute'])
 })
 
+test('unified create adopts the delivered project epoch, not the turn-start epoch', async () => {
+  // Régression : après « crée … », chaque demande suivante échouait en PROJECT_CHANGED.
+  const store = unifiedStore(async (body) => body.phase === 'prepare'
+    ? { ok: true, result_kind: 'ready_to_execute', turn_id: 'create-turn', task_intent: 'CREATE' }
+    : { ok: true, result_kind: 'execution', turn_id: 'create-turn', project_epoch: 3, current_project_epoch: 4,
+      project: { name: 'Shelf', source: 'hsf', path: '/workspace/Shelf' }, parameters: [],
+      preview: { meshes: [], wires: [], warnings: [] }, warnings: [],
+      assistant: { kind: 'generate', reply: 'done', changed_files: [], intent: 'CREATE' } })
+  store.setState({ flushDirtyScripts: async () => ({ ok: true, didSave: false }) })
+  await store.getState().sendChat('crée une étagère', [], 'auto', async () => true)
+  expect(store.getState().project?.name).toBe('Shelf')
+  expect(store.getState().projectEpoch).toBe(4)
+})
+
 test('unified plan and cancellation never flush drafts', async () => {
   const calls: Record<string, unknown>[] = []
   const store = unifiedStore(async (body) => {
