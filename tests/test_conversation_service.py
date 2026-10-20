@@ -747,3 +747,43 @@ def test_continuation_recovers_goal_from_restored_user_history(tmp_path):
     session.route('POST', '/api/assistant/turn', {'phase': 'execute', 'turn_id': ready['turn_id']})
     request = [p.request for p in _RecordingPipeline.captured if p.request is not None][-1]
     assert request.effect_contract == {'change_kind': 'geometry'}
+
+
+def test_stream_sends_heartbeats_while_the_model_is_silent(tmp_path, monkeypatch):
+    # Régression : plusieurs minutes sans événement → la vue web coupait le flux,
+    # la tâche finissait « annulée » et la fenêtre affichait « Generation request failed ».
+    import threading
+    import openbrep.workbench.conversation_service as cs
+    monkeypatch.setattr(cs, 'STREAM_HEARTBEAT_SECONDS', 0.02)
+    session = session_at(tmp_path)
+    ready = prepare(session)
+    release = threading.Event()
+    def execute(_body):
+        assert release.wait(2)
+        return {'ok': True, 'assistant': {'reply': 'done'}}
+    session.assistant_service.generate_with_assistant.side_effect = execute
+    stream = session.route('POST', '/api/assistant/turn', {'phase': 'execute', 'turn_id': ready['turn_id'], 'stream': True})
+    seen = []
+    for event in stream:
+        seen.append(event['type'])
+        if seen.count('__heartbeat__') >= 2:
+            release.set()
+        if event['type'] == 'done':
+            break
+    assert seen.count('__heartbeat__') >= 2
+    assert seen[-1] == 'done'
+
+
+def test_http_stream_writes_heartbeat_as_sse_comment():
+    import io
+    from openbrep.workbench.http_server import _WorkbenchRequestHandler as WorkbenchHandler
+    handler = WorkbenchHandler.__new__(WorkbenchHandler)
+    handler.wfile = io.BytesIO()
+    handler.send_response = lambda *a, **k: None
+    handler.send_header = lambda *a, **k: None
+    handler.end_headers = lambda: None
+    handler._send_stream(iter([{'type': '__heartbeat__', 'data': {}}, {'type': 'done', 'data': {'ok': True}}]))
+    body = handler.wfile.getvalue().decode()
+    assert body.startswith(': ping\n\n')
+    assert 'event: __heartbeat__' not in body
+    assert 'event: done' in body

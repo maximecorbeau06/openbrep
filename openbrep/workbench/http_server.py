@@ -145,6 +145,11 @@ class _WorkbenchRequestHandler(BaseHTTPRequestHandler):
         try:
             for event in generator:
                 event_type = event.get("type", "message")
+                if event_type == "__heartbeat__":
+                    # Commentaire SSE : garde la connexion vivante, aucun événement côté client
+                    self.wfile.write(b": ping\n\n")
+                    self.wfile.flush()
+                    continue
                 data = json.dumps(event.get("data", {}), ensure_ascii=False)
                 self.wfile.write(f"event: {event_type}\ndata: {data}\n\n".encode("utf-8"))
                 self.wfile.flush()

@@ -47,6 +47,11 @@ class PreparedTurn:
     reference_asset_ids: list[str] | None = None
 
 
+# Intervalle des signes de vie du flux SSE (secondes) et événement correspondant ;
+# http_server l'écrit comme commentaire SSE (« : ping »), ignoré par l'interface.
+STREAM_HEARTBEAT_SECONDS = 15.0
+HEARTBEAT_EVENT = {'type': '__heartbeat__', 'data': {}}
+
 class WorkbenchConversationService:
     def __init__(self, session: Any, *, clock=time.monotonic):
         self.session = session
@@ -313,7 +318,14 @@ class WorkbenchConversationService:
                 threading.Thread(target=worker, daemon=True).start()
                 try:
                     while True:
-                        event = events.get()
+                        try:
+                            event = events.get(timeout=STREAM_HEARTBEAT_SECONDS)
+                        except queue.Empty:
+                            # Signe de vie pendant les longs appels au modèle (plusieurs
+                            # minutes sans événement) : sans lui, la vue web de l'app
+                            # abandonnait la connexion et la tâche finissait « annulée ».
+                            yield HEARTBEAT_EVENT
+                            continue
                         if event is None:
                             break
                         yield event
