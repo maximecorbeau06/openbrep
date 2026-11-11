@@ -4929,9 +4929,18 @@ def _send_session(tmp_path, bridge, *, compile_ok=True, mode="lp"):
 
 
 class _SendBridge:
-    def __init__(self, available=True, add_ok=True, reload_ok=True):
+    def __init__(self, available=True, add_ok=True, reload_ok=True, projects=None):
         self.available, self.add_ok, self.reload_ok = available, add_ok, reload_ok
         self.added = []
+        self.ports = []
+        self.projects = [{"port": 19725, "project_name": "Projet test", "untitled": False}] if projects is None else projects
+
+    def list_open_projects(self):
+        return list(self.projects)
+
+    def connect_port(self, port):
+        self.ports.append(port)
+        return True
 
     def is_available(self):
         return self.available
@@ -4958,7 +4967,32 @@ def test_send_to_archicad_compiles_for_real_then_adds_and_reloads(tmp_path):
     assert bridge.added == [(str(tmp_path / "Étagère paramétrable.gsm"), "MM STUDIO GDL/Étagère paramétrable.gsm")]
     assert response["library_path"] == "MM STUDIO GDL/Étagère paramétrable.gsm"
     assert response["reloaded"] is True
-    assert "envoyé dans Archicad" in response["message"]
+    assert bridge.ports == [19725]
+    assert "envoyé dans « Projet test »" in response["message"]
+
+
+def test_send_to_archicad_asks_which_project_when_several_are_open(tmp_path):
+    projects = [{"port": 19723, "project_name": "AURELIA - GRIMAUD - 2026", "untitled": False},
+                {"port": 19725, "project_name": "Projet sans titre", "untitled": True}]
+    bridge = _SendBridge(projects=projects)
+    session, calls = _send_session(tmp_path, bridge)
+
+    asked = session.route("POST", "/api/tapir/send-to-archicad", {})
+    assert asked["ok"] is False and asked["needs_target"] is True
+    assert [t["project_name"] for t in asked["targets"]] == ["AURELIA - GRIMAUD - 2026", "Projet sans titre"]
+    assert "compile_body" not in calls and bridge.added == []  # rien compilé ni envoyé avant le choix
+
+    sent = session.route("POST", "/api/tapir/send-to-archicad", {"port": 19725})
+    assert sent["ok"] is True
+    assert bridge.ports == [19725]
+    assert "« Projet sans titre »" in sent["message"]
+
+
+def test_send_to_archicad_without_any_open_project_explains(tmp_path):
+    session, calls = _send_session(tmp_path, _SendBridge(projects=[]))
+    response = session.route("POST", "/api/tapir/send-to-archicad", {})
+    assert response["ok"] is False and "Aucun projet Archicad ouvert" in response["message"]
+    assert "compile_body" not in calls
 
 
 def test_send_to_archicad_stops_when_compile_fails_or_is_simulated(tmp_path):

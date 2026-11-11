@@ -168,3 +168,26 @@ def test_add_to_embedded_library_reports_archicad_refusal():
     )
 
     assert bridge.add_to_embedded_library("/tmp/a.gsm", "MM STUDIO GDL/a.gsm") == (False, "file exists")
+
+
+def test_list_open_projects_reads_project_names_per_port(monkeypatch):
+    import openbrep.tapir_bridge as tb
+
+    class FakeConn:
+        def __init__(self, port):
+            self.types = SimpleNamespace(AddOnCommandId=lambda namespace, name: (namespace, name))
+            info = {19723: {"projectName": "AURELIA", "isUntitled": False}, 19725: {"isUntitled": True}}[port]
+            self.commands = SimpleNamespace(ExecuteAddOnCommand=lambda command_id, params: info)
+
+    class FakeACConnection:
+        @staticmethod
+        def connect(port):
+            return FakeConn(port) if port in (19723, 19725) else None
+
+    monkeypatch.setattr(tb, "_AC_AVAILABLE", True)
+    monkeypatch.setattr(tb, "ACConnection", FakeACConnection)
+
+    assert tb.TapirBridge().list_open_projects() == [
+        {"port": 19723, "project_name": "AURELIA", "untitled": False},
+        {"port": 19725, "project_name": "Projet sans titre", "untitled": True},
+    ]

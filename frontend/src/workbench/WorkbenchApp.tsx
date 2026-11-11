@@ -35,7 +35,7 @@ export function WorkbenchApp() {
     void useUpdateStore.getState().check()
   }, [])
 
-  const { confirm, prompt, dialogNode } = useThemedDialog()
+  const { confirm, prompt, choose, dialogNode } = useThemedDialog()
   // SF1（F04）：所有离开项目入口共用的"取消 / 丢弃并继续"确认守卫
   const { runLeaveAction, dialogNode: leaveDialogNode } = useProjectLeaveGuard()
 
@@ -204,6 +204,18 @@ export function WorkbenchApp() {
   // P0-C：有项目打开时的"生成"意图先确认（建筑基础_v1 事故：
   // "参考图1生成坐斗"被当成改当前项目，全文重写覆盖了打开的项目）。
   // 新建项目不会改动当前项目文件；想改当前项目可取消后改用修改类表述。
+  // Plusieurs projets Archicad ouverts : on demande la cible au lieu de deviner.
+  async function sendToChosenArchicad() {
+    const first = await sendToArchicad()
+    if (!first?.needs_target || !first.targets?.length) return
+    const chosen = await choose({
+      title: t('archicadTarget.title'),
+      message: t('archicadTarget.message', { name: project?.name || '' }),
+      choices: first.targets.map((target) => ({ label: target.project_name, value: String(target.port) })),
+    })
+    if (chosen !== null) await sendToArchicad(Number(chosen))
+  }
+
   async function handleChat(message: string, images?: AssistantImageAttachment[], requestedMode: 'auto' | 'plan' = 'auto', confirmBeforeExecute = false) {
     if (llmSettings.conversation_entry !== 'legacy') {
       await sendChat(message, images, requestedMode, () => confirm({
@@ -428,7 +440,7 @@ export function WorkbenchApp() {
         currentModel={llmSettings.model}
         onApply={() => void applyDraftParameters()}
         onCompile={() => void compileCurrentProject()}
-        onSendToArchicad={() => void sendToArchicad()}
+        onSendToArchicad={() => void sendToChosenArchicad()}
         onMockCompile={() => void runMockCompile()}
         onSave={() => void saveCurrentProject()}
         onOpenSettings={() => { setSettingsInitialFocus(undefined); setSettingsOpen(true) }}

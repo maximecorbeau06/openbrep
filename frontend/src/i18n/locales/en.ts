@@ -12,6 +12,8 @@ export const en: Record<LocaleKey, string> = {
   'topMenu.sendToArchicad': 'Send to Archicad',
   'topMenu.sendingToArchicad': 'Sending…',
   'topMenu.sendToArchicadTitle': 'Compiles the object, then adds it to the embedded library of the project open in Archicad (“MM STUDIO GDL” folder)',
+  'archicadTarget.title': 'Send to which Archicad project?',
+  'archicadTarget.message': 'Several Archicad projects are open. Choose the one that should receive “{name}”.',
   'topMenu.build': 'Build',
   'topMenu.mockCompile': 'Mock Compile',
   'topMenu.settings': 'Settings',

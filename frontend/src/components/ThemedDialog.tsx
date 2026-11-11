@@ -9,6 +9,13 @@ export interface ConfirmOptions {
   danger?: boolean
 }
 
+/** Choix parmi plusieurs options (un bouton par option) ; null si annulé. */
+export interface ChooseOptions {
+  title: string
+  message?: string
+  choices: { label: string; value: string }[]
+}
+
 export interface PromptOptions {
   title: string
   message?: string
@@ -29,11 +36,19 @@ interface PromptRequest {
   settle: (value: string | null) => void
 }
 
-type PendingRequest = ConfirmRequest | PromptRequest
+interface ChooseRequest {
+  id: number
+  kind: 'choose'
+  options: ChooseOptions
+  settle: (value: string | null) => void
+}
+
+type PendingRequest = ConfirmRequest | PromptRequest | ChooseRequest
 
 export interface ThemedDialogApi {
   confirm: (options: ConfirmOptions) => Promise<boolean>
   prompt: (options: PromptOptions) => Promise<string | null>
+  choose: (options: ChooseOptions) => Promise<string | null>
   dialogNode: ReactNode
 }
 
@@ -71,9 +86,23 @@ export function useThemedDialog(): ThemedDialogApi {
       })
     })
 
+  const choose = (options: ChooseOptions) =>
+    new Promise<string | null>((resolve) => {
+      setPending({
+        id: ++nextRequestId.current,
+        kind: 'choose',
+        options,
+        settle: (value) => {
+          resolve(value)
+          setPending(null)
+        },
+      })
+    })
+
   return {
     confirm,
     prompt,
+    choose,
     // key 用请求 id：连续请求时强制重建，输入态不残留。
     dialogNode: pending ? <ThemedDialog key={pending.id} request={pending} /> : null,
   }
@@ -88,13 +117,13 @@ function ThemedDialog({ request }: { request: PendingRequest }) {
     request.kind === 'confirm' ? request.options.confirmLabel ?? t('dialog.confirm') : t('dialog.confirm')
 
   function cancel() {
-    if (request.kind === 'prompt') request.settle(null)
-    else request.settle(false)
+    if (request.kind === 'confirm') request.settle(false)
+    else request.settle(null)
   }
 
   function confirmAction() {
     if (request.kind === 'prompt') request.settle(promptValue)
-    else request.settle(true)
+    else if (request.kind === 'confirm') request.settle(true)
   }
 
   function handleKeyDown(event: KeyboardEvent<HTMLDivElement>) {
@@ -128,10 +157,20 @@ function ThemedDialog({ request }: { request: PendingRequest }) {
             onChange={(event) => setPromptValue(event.currentTarget.value)}
           />
         ) : null}
+        {request.kind === 'choose' ? (
+          <div className="themed-dialog-choices" role="group" aria-label={request.options.title}>
+            {request.options.choices.map((choice) => (
+              <button key={choice.value} type="button" onClick={() => request.settle(choice.value)}>
+                {choice.label}
+              </button>
+            ))}
+          </div>
+        ) : null}
         <div className="themed-dialog-actions">
           <button type="button" autoFocus={danger} onClick={cancel}>
             {t('dialog.cancel')}
           </button>
+{request.kind !== 'choose' ? (
           <button
             type="button"
             className={danger ? 'themed-dialog-danger' : ''}
@@ -140,6 +179,7 @@ function ThemedDialog({ request }: { request: PendingRequest }) {
           >
             {confirmLabel}
           </button>
+          ) : null}
         </div>
       </div>
     </div>

@@ -55,8 +55,8 @@ export function createCompileActions({ api, get, set }: WorkbenchActionContext) 
       }
     },
 
-    async sendToArchicad() {
-      if (get().sourceActionBusy || get().compiling || get().sendingToArchicad) return
+    async sendToArchicad(port?: number) {
+      if (get().sourceActionBusy || get().compiling || get().sendingToArchicad) return undefined
       set({ sendingToArchicad: true, lastError: null })
       const flushed = await get().flushDirtyScripts()
       if (!flushed.ok) {
@@ -64,9 +64,14 @@ export function createCompileActions({ api, get, set }: WorkbenchActionContext) 
           sendingToArchicad: false,
           compileLog: [`Envoi annulé : ${state.lastError ?? 'scripts non enregistrés'}`, ...state.compileLog].slice(0, 20),
         }))
-        return
+        return undefined
       }
-      const result = await api.sendToArchicad(get().compilerSettings.output_dir)
+      const result = await api.sendToArchicad(get().compilerSettings.output_dir, port)
+      if (result.needs_target) {
+        // Plusieurs projets Archicad ouverts : rien n'est envoyé, l'interface demande la cible.
+        set((state) => ({ sendingToArchicad: false, tapirStatus: result.tapir ?? state.tapirStatus }))
+        return result
+      }
       const message = result.message ?? result.error ?? (result.ok ? 'Objet envoyé dans Archicad.' : 'Envoi vers Archicad impossible.')
       set((state) => ({
         sendingToArchicad: false,
@@ -75,6 +80,7 @@ export function createCompileActions({ api, get, set }: WorkbenchActionContext) 
         compileLog: [message, ...state.compileLog].slice(0, 20),
       }))
       if (flushed.didSave) await refreshPreviewFromSavedSource()
+      return result
     },
 
     async runMockCompile() {

@@ -3041,6 +3041,18 @@ button:focus-visible {
   gap: 8px;
 }
 
+.themed-dialog-choices {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+
+.themed-dialog-choices button {
+  justify-content: flex-start;
+  text-align: left;
+}
+
 .themed-dialog-danger {
   border-color: var(--status-error-border);
   background: var(--status-error-bg);

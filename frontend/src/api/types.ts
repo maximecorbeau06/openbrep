@@ -921,6 +921,9 @@ export interface SendToArchicadResult extends TapirActionResult {
   compile?: { success?: boolean; mode?: string; output_path?: string | null }
   library_path?: string
   reloaded?: boolean
+  /** Plusieurs projets Archicad ouverts : l'utilisateur doit choisir la cible */
+  needs_target?: boolean
+  targets?: { port: number; project_name: string; untitled?: boolean }[]
 }
 
 export interface LlmSettingsResult {

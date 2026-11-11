@@ -15,6 +15,8 @@ export const fr: Record<LocaleKey, string> = {
   'topMenu.sendToArchicad': 'Envoyer vers Archicad',
   'topMenu.sendingToArchicad': 'Envoi…',
   'topMenu.sendToArchicadTitle': 'Compile l’objet puis l’ajoute à la bibliothèque intégrée du projet ouvert dans Archicad (dossier « MM STUDIO GDL »)',
+  'archicadTarget.title': 'Envoyer vers quel projet Archicad ?',
+  'archicadTarget.message': 'Plusieurs projets Archicad sont ouverts. Choisis celui qui doit recevoir « {name} ».',
   'topMenu.build': 'Construire',
   'topMenu.mockCompile': 'Compilation simulée',
   'topMenu.settings': 'Réglages',

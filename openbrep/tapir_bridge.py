@@ -212,6 +212,45 @@ class TapirBridge:
             self._last_connection_error = str(exc)
             return False
 
+    def list_open_projects(self) -> list[dict]:
+        """Projets ouverts dans chaque Archicad joignable (ports 19723–19743), en lecture seule."""
+        if not _AC_AVAILABLE:
+            return []
+        projects = []
+        for port in range(19723, 19744):
+            try:
+                conn = ACConnection.connect(port)
+            except Exception:
+                conn = None
+            if conn is None:
+                continue
+            try:
+                info = conn.commands.ExecuteAddOnCommand(
+                    conn.types.AddOnCommandId(self.TAPIR_ADDON_ID, "GetProjectInfo"), {})
+            except Exception:
+                continue  # Archicad sans Tapir ou sans projet ouvert
+            if not isinstance(info, dict):
+                continue
+            name = str(info.get("projectName") or "").strip()
+            projects.append({
+                "port": port,
+                "project_name": name or "Projet sans titre",
+                "untitled": bool(info.get("isUntitled")) or not name,
+            })
+        return projects
+
+    def connect_port(self, port: int) -> bool:
+        """Se connecte à l'Archicad écoutant sur ``port`` (choisi par l'utilisateur)."""
+        if not _AC_AVAILABLE:
+            self._last_connection_error = "Archicad Python API 未安装"
+            return False
+        try:
+            self._conn = ACConnection.connect(int(port))
+        except Exception as exc:
+            self._conn = None
+            self._last_connection_error = str(exc)
+        return self._conn is not None
+
     def is_available(self) -> bool:
         """检查 Archicad + Tapir 是否可用。"""
         if not self.connect():

@@ -87,11 +87,23 @@ class WorkbenchTapirAdapter:
         self.state.tapir_last_error = "" if ok else msg
         return self._action(ok, msg)
 
-    def send_library_part(self, gsm_path: str, object_name: str) -> dict[str, Any]:
+    def archicad_targets(self) -> list[dict[str, Any]]:
+        """Projets Archicad ouverts pouvant recevoir un objet (vide si Tapir indisponible)."""
+        if not self.tapir_import_ok or self.get_bridge_fn is None:
+            return []
+        bridge = self.get_bridge_fn()
+        lister = getattr(bridge, "list_open_projects", None)
+        return list(lister()) if callable(lister) else []
+
+    def send_library_part(self, gsm_path: str, object_name: str, *, port: int | None = None,
+                          project_name: str = "") -> dict[str, Any]:
         """Dépose le .gsm compilé dans la bibliothèque intégrée d'Archicad puis recharge."""
         if not self.tapir_import_ok or self.get_bridge_fn is None:
             return self._action(False, "Le module Tapir n'est pas disponible dans l'app.")
         bridge = self.get_bridge_fn()
+        if port is not None and not bridge.connect_port(port):
+            self.state.tapir_last_error = "Le projet Archicad choisi ne répond plus : vérifie qu'il est toujours ouvert."
+            return self._action(False, self.state.tapir_last_error)
         if not bridge.is_available():
             self.state.tapir_last_error = "Archicad n'est pas ouvert, ou Tapir n'y est pas installé."
             return self._action(False, self.state.tapir_last_error)
@@ -102,10 +114,11 @@ class WorkbenchTapirAdapter:
             return self._action(False, self.state.tapir_last_error)
         reloaded = bool(bridge.reload_libraries())
         self.state.tapir_last_error = ""
+        where = f"« {project_name} »" if project_name else "Archicad"
         message = (
-            f"Objet envoyé dans Archicad (bibliothèque intégrée › {target})."
+            f"Objet envoyé dans {where} (bibliothèque intégrée › {target})."
             if reloaded
-            else f"Objet déposé dans Archicad ({target}), mais le rechargement des bibliothèques a échoué : "
+            else f"Objet déposé dans {where} ({target}), mais le rechargement des bibliothèques a échoué : "
             "utilise Fichier › Bibliothèques et objets › Recharger."
         )
         return {**self._action(True, message), "library_path": target, "reloaded": reloaded}

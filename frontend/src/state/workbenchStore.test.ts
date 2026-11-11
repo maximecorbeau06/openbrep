@@ -5029,3 +5029,23 @@ test('sendToArchicad surfaces a closed Archicad as an error and never sends unsa
   expect(send).not.toHaveBeenCalled()
   expect(unsaved.getState().sendingToArchicad).toBe(false)
 })
+
+test('sendToArchicad returns the open projects without sending when several Archicad are open', async () => {
+  const ports: Array<number | undefined> = []
+  const store = createStore(makeApi({
+    sendToArchicad: async (_dir?: string, port?: number) => {
+      ports.push(port)
+      return port === undefined
+        ? { ok: false, needs_target: true, targets: [{ port: 19723, project_name: 'AURELIA' }, { port: 19725, project_name: 'Test' }] }
+        : { ok: true, message: 'Objet envoyé dans « Test ».' }
+    },
+  }))
+  store.setState({ flushDirtyScripts: async () => ({ ok: true, didSave: false }) })
+  const first = await store.getState().sendToArchicad()
+  expect(first?.needs_target).toBe(true)
+  expect(store.getState().lastError).toBeNull()
+  expect(store.getState().sendingToArchicad).toBe(false)
+  const second = await store.getState().sendToArchicad(19725)
+  expect(second?.ok).toBe(true)
+  expect(ports).toEqual([undefined, 19725])
+})

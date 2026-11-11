@@ -143,3 +143,40 @@ describe('ThemedDialog prompt', () => {
     expect((screen.getByRole('textbox') as HTMLInputElement).value).toBe('Shelf')
   })
 })
+
+function ChooseHarness() {
+  const { choose, dialogNode } = useThemedDialog()
+  const [result, setResult] = useState<string>('pending')
+  function open() {
+    void choose({
+      title: 'Envoyer vers quel projet Archicad ?',
+      choices: [{ label: 'AURELIA - GRIMAUD - 2026', value: '19723' }, { label: 'Projet sans titre', value: '19725' }],
+    }).then((value) => setResult(`chose:${String(value)}`))
+  }
+  return (
+    <div>
+      <button type="button" onClick={open}>open</button>
+      <span data-testid="result">{result}</span>
+      {dialogNode}
+    </div>
+  )
+}
+
+describe('ThemedDialog choose', () => {
+  test('resolves the value of the clicked choice', async () => {
+    render(<ChooseHarness />)
+    fireEvent.click(screen.getByText('open'))
+    fireEvent.click(screen.getByText('Projet sans titre'))
+    await expectResult('chose:19725')
+  })
+
+  test('resolves null when cancelled and offers no generic confirm button', async () => {
+    render(<ChooseHarness />)
+    fireEvent.click(screen.getByText('open'))
+    expect(screen.getAllByRole('button').map((b) => b.textContent)).toEqual(
+      expect.arrayContaining(['AURELIA - GRIMAUD - 2026', 'Projet sans titre']),
+    )
+    fireEvent.keyDown(screen.getByRole('dialog'), { key: 'Escape' })
+    await expectResult('chose:null')
+  })
+})

@@ -130,7 +130,7 @@ export interface WorkbenchApi {
   chooseCompilerFile: () => Promise<FileChoiceResult>
   chooseOutputDirectory: () => Promise<DirectoryChoiceResult>
   compileProject: (outputDir?: string) => Promise<CompileResult>
-  sendToArchicad: (outputDir?: string) => Promise<import('../api/types').SendToArchicadResult>
+  sendToArchicad: (outputDir?: string, port?: number) => Promise<import('../api/types').SendToArchicadResult>
   createProjectFromPrompt: (
     message: string,
     assistantSettings?: string,
@@ -461,7 +461,8 @@ export interface WorkbenchState {
   loadTapirParameters: () => Promise<void>
   applyTapirParameters: () => Promise<void>
   compileCurrentProject: () => Promise<void>
-  sendToArchicad: () => Promise<void>
+  /** Sans port : le moteur peut répondre needs_target (plusieurs Archicad ouverts) ; l'appelant choisit puis relance avec le port. */
+  sendToArchicad: (port?: number) => Promise<import('../api/types').SendToArchicadResult | undefined>
   setActiveRailPanel: (panel: '3d' | '2d' | 'inspect' | 'ai') => void
   loadAssistantHistory: () => Promise<void>
   clearAssistantHistory: () => Promise<void>
