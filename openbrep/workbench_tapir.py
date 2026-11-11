@@ -19,6 +19,16 @@ class TapirSessionState(dict):
         self[name] = value
 
 
+# Dossier de la bibliothèque intégrée Archicad qui reçoit les objets envoyés par l'app.
+EMBEDDED_LIBRARY_FOLDER = "MM STUDIO GDL"
+
+
+def _library_file_name(name: str) -> str:
+    """Nom de fichier sûr pour la bibliothèque (pas de séparateurs ni caractères réservés)."""
+    cleaned = "".join("_" if ch in '/\\:*?"<>|' else ch for ch in str(name or "").strip())
+    return cleaned.strip(". ") or "Objet MM STUDIO"
+
+
 def default_tapir_bridge_loader() -> tuple[Callable[[], object] | None, bool]:
     try:
         from openbrep.tapir_bridge import get_bridge
@@ -76,6 +86,29 @@ class WorkbenchTapirAdapter:
         msg = "已通知 Archicad 重载图库" if ok else "Tapir 重载 Archicad 图库失败"
         self.state.tapir_last_error = "" if ok else msg
         return self._action(ok, msg)
+
+    def send_library_part(self, gsm_path: str, object_name: str) -> dict[str, Any]:
+        """Dépose le .gsm compilé dans la bibliothèque intégrée d'Archicad puis recharge."""
+        if not self.tapir_import_ok or self.get_bridge_fn is None:
+            return self._action(False, "Le module Tapir n'est pas disponible dans l'app.")
+        bridge = self.get_bridge_fn()
+        if not bridge.is_available():
+            self.state.tapir_last_error = "Archicad n'est pas ouvert, ou Tapir n'y est pas installé."
+            return self._action(False, self.state.tapir_last_error)
+        target = f"{EMBEDDED_LIBRARY_FOLDER}/{_library_file_name(object_name)}.gsm"
+        ok, error = bridge.add_to_embedded_library(gsm_path, target)
+        if not ok:
+            self.state.tapir_last_error = f"Archicad a refusé l'objet : {error}"
+            return self._action(False, self.state.tapir_last_error)
+        reloaded = bool(bridge.reload_libraries())
+        self.state.tapir_last_error = ""
+        message = (
+            f"Objet envoyé dans Archicad (bibliothèque intégrée › {target})."
+            if reloaded
+            else f"Objet déposé dans Archicad ({target}), mais le rechargement des bibliothèques a échoué : "
+            "utilise Fichier › Bibliothèques et objets › Recharger."
+        )
+        return {**self._action(True, message), "library_path": target, "reloaded": reloaded}
 
     def sync_selection(self) -> dict[str, Any]:
         ok, message = tapir_controller.tapir_sync_selection(

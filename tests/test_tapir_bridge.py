@@ -133,3 +133,38 @@ def test_connect_scans_archicad_ports_instead_of_consuming_workbench_port(monkey
     assert bridge.connect() is True
     assert bridge._conn is connection
     assert calls == [("scan",), ("connect", 19723)]
+
+
+def test_add_to_embedded_library_sends_tapir_file_addition():
+    calls = []
+
+    class FakeCommands:
+        def ExecuteAddOnCommand(self, command_id, parameters):
+            calls.append((command_id, parameters))
+            return {"executionResults": [{"success": True}]}
+
+    bridge = TapirBridge()
+    bridge._conn = SimpleNamespace(
+        types=SimpleNamespace(AddOnCommandId=lambda namespace, name: (namespace, name)),
+        commands=FakeCommands(),
+    )
+
+    ok, error = bridge.add_to_embedded_library("/tmp/Table.gsm", "MM STUDIO GDL/Table.gsm")
+
+    assert (ok, error) == (True, "")
+    assert calls[0][0][1] == "AddFilesToEmbeddedLibrary"
+    assert calls[0][1] == {"files": [{"inputPath": "/tmp/Table.gsm", "outputPath": "MM STUDIO GDL/Table.gsm", "type": "Object"}]}
+
+
+def test_add_to_embedded_library_reports_archicad_refusal():
+    class FakeCommands:
+        def ExecuteAddOnCommand(self, command_id, parameters):
+            return {"executionResults": [{"success": False, "error": {"message": "file exists"}}]}
+
+    bridge = TapirBridge()
+    bridge._conn = SimpleNamespace(
+        types=SimpleNamespace(AddOnCommandId=lambda namespace, name: (namespace, name)),
+        commands=FakeCommands(),
+    )
+
+    assert bridge.add_to_embedded_library("/tmp/a.gsm", "MM STUDIO GDL/a.gsm") == (False, "file exists")

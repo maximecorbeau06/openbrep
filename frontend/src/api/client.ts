@@ -1029,6 +1029,18 @@ export async function fetchTapirStatus(): Promise<TapirStatusResult> {
   )
 }
 
+export async function sendToArchicad(outputDir = ''): Promise<import('./types').SendToArchicadResult> {
+  return requestJson<import('./types').SendToArchicadResult>(
+    '/api/tapir/send-to-archicad',
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ output_dir: outputDir }),
+    },
+    { ok: false, message: 'OpenBrep local API is not available.' },
+  )
+}
+
 export async function reloadTapirLibraries(): Promise<TapirActionResult> {
   return requestJson<TapirActionResult>(
     '/api/tapir/reload-libraries',

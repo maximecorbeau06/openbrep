@@ -11,12 +11,15 @@ interface TopMenuProps {
   currentModel?: string
   onApply: () => void
   onCompile: () => void
+  /** Compile puis dépose l’objet dans la bibliothèque intégrée de l’Archicad ouvert */
+  onSendToArchicad?: () => void
   onMockCompile: () => void
   onSave: () => void
   onOpenSettings: () => void
   applying: boolean
   loading: boolean
   compiling: boolean
+  sendingToArchicad?: boolean
   saving: boolean
   /** SF1：源操作进行中（Save/Save As/参数写入/Revision）禁用编译与保存入口 */
   sourceBusy?: boolean
@@ -34,12 +37,14 @@ export function TopMenu({
   currentModel,
   onApply,
   onCompile,
+  onSendToArchicad,
   onMockCompile,
   onSave,
   onOpenSettings,
   applying,
   loading,
   compiling,
+  sendingToArchicad = false,
   saving,
   sourceBusy = false,
   hasDirtyScript,
@@ -80,6 +85,17 @@ export function TopMenu({
         <button type="button" data-testid="compile-button" disabled={!canCompile || compiling || sourceBusy} onClick={onCompile}>
           {compiling ? '...' : t('topMenu.compile')}
         </button>
+        {onSendToArchicad ? (
+          <button
+            type="button"
+            data-testid="send-to-archicad-button"
+            disabled={!canCompile || compiling || sendingToArchicad || sourceBusy}
+            onClick={onSendToArchicad}
+            title={t('topMenu.sendToArchicadTitle')}
+          >
+            {sendingToArchicad ? t('topMenu.sendingToArchicad') : t('topMenu.sendToArchicad')}
+          </button>
+        ) : null}
         <div className="toolbar-menu build-menu">
           <button
             type="button"

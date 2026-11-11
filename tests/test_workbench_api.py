@@ -1,5 +1,6 @@
 import base64
 import copy
+from types import SimpleNamespace
 import json
 from pathlib import Path
 
@@ -4907,3 +4908,78 @@ models = ["relay-main"]
     # 快照仍带 api_key 字段（旧字段保留）但为掩码形态
     assert snapshot["llm"]["api_key"] != plaintext
     assert "…" in snapshot["llm"]["api_key"] or snapshot["llm"]["api_key"] == ""
+
+
+def _send_session(tmp_path, bridge, *, compile_ok=True, mode="lp"):
+    session = WorkbenchSession(tapir_import_ok=True, get_tapir_bridge_fn=lambda: bridge,
+                               now_text_fn=lambda: "2026-11-11 10:00")
+    calls = {}
+
+    def fake_compile(body):
+        calls["compile_body"] = body
+        gsm = tmp_path / "Étagère paramétrable.gsm"
+        gsm.write_bytes(b"GSM")
+        if not compile_ok:
+            return {"ok": False, "error": "erreur GDL ligne 3", "compile": {"success": False, "mode": "lp"}}
+        return {"ok": True, "compile": {"success": True, "mode": mode, "output_path": str(gsm)}}
+
+    session.compile_project = fake_compile
+    session._project = SimpleNamespace(name="Étagère paramétrable")
+    return session, calls
+
+
+class _SendBridge:
+    def __init__(self, available=True, add_ok=True, reload_ok=True):
+        self.available, self.add_ok, self.reload_ok = available, add_ok, reload_ok
+        self.added = []
+
+    def is_available(self):
+        return self.available
+
+    def get_status(self):
+        return {"archicad_connected": self.available, "tapir_available": self.available, "version": "27"}
+
+    def add_to_embedded_library(self, input_path, output_path):
+        self.added.append((input_path, output_path))
+        return (True, "") if self.add_ok else (False, "file exists")
+
+    def reload_libraries(self):
+        return self.reload_ok
+
+
+def test_send_to_archicad_compiles_for_real_then_adds_and_reloads(tmp_path):
+    bridge = _SendBridge()
+    session, calls = _send_session(tmp_path, bridge)
+
+    response = session.route("POST", "/api/tapir/send-to-archicad", {})
+
+    assert calls["compile_body"]["compiler_mode"] == "lp"
+    assert response["ok"] is True
+    assert bridge.added == [(str(tmp_path / "Étagère paramétrable.gsm"), "MM STUDIO GDL/Étagère paramétrable.gsm")]
+    assert response["library_path"] == "MM STUDIO GDL/Étagère paramétrable.gsm"
+    assert response["reloaded"] is True
+    assert "envoyé dans Archicad" in response["message"]
+
+
+def test_send_to_archicad_stops_when_compile_fails_or_is_simulated(tmp_path):
+    for kwargs in ({"compile_ok": False}, {"mode": "mock"}):
+        bridge = _SendBridge()
+        session, _ = _send_session(tmp_path, bridge, **kwargs)
+        response = session.route("POST", "/api/tapir/send-to-archicad", {})
+        assert response["ok"] is False
+        assert response["message"].startswith("Compilation impossible")
+        assert bridge.added == []
+
+
+def test_send_to_archicad_explains_when_archicad_is_closed_or_refuses(tmp_path):
+    closed, _ = _send_session(tmp_path, _SendBridge(available=False))
+    response = closed.route("POST", "/api/tapir/send-to-archicad", {})
+    assert response["ok"] is False and "Archicad n'est pas ouvert" in response["message"]
+
+    refused, _ = _send_session(tmp_path, _SendBridge(add_ok=False))
+    response = refused.route("POST", "/api/tapir/send-to-archicad", {})
+    assert response["ok"] is False and "file exists" in response["message"]
+
+    no_reload, _ = _send_session(tmp_path, _SendBridge(reload_ok=False))
+    response = no_reload.route("POST", "/api/tapir/send-to-archicad", {})
+    assert response["ok"] is True and response["reloaded"] is False and "Recharger" in response["message"]

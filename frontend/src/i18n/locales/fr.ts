@@ -12,6 +12,9 @@ export const fr: Record<LocaleKey, string> = {
   // TopMenu
   'topMenu.save': 'Enregistrer',
   'topMenu.compile': 'Compiler',
+  'topMenu.sendToArchicad': 'Envoyer vers Archicad',
+  'topMenu.sendingToArchicad': 'Envoi…',
+  'topMenu.sendToArchicadTitle': 'Compile l’objet puis l’ajoute à la bibliothèque intégrée du projet ouvert dans Archicad (dossier « MM STUDIO GDL »)',
   'topMenu.build': 'Construire',
   'topMenu.mockCompile': 'Compilation simulée',
   'topMenu.settings': 'Réglages',

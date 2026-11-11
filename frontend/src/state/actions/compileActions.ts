@@ -55,6 +55,28 @@ export function createCompileActions({ api, get, set }: WorkbenchActionContext) 
       }
     },
 
+    async sendToArchicad() {
+      if (get().sourceActionBusy || get().compiling || get().sendingToArchicad) return
+      set({ sendingToArchicad: true, lastError: null })
+      const flushed = await get().flushDirtyScripts()
+      if (!flushed.ok) {
+        set((state) => ({
+          sendingToArchicad: false,
+          compileLog: [`Envoi annulé : ${state.lastError ?? 'scripts non enregistrés'}`, ...state.compileLog].slice(0, 20),
+        }))
+        return
+      }
+      const result = await api.sendToArchicad(get().compilerSettings.output_dir)
+      const message = result.message ?? result.error ?? (result.ok ? 'Objet envoyé dans Archicad.' : 'Envoi vers Archicad impossible.')
+      set((state) => ({
+        sendingToArchicad: false,
+        tapirStatus: result.tapir ?? state.tapirStatus,
+        lastError: result.ok ? null : message,
+        compileLog: [message, ...state.compileLog].slice(0, 20),
+      }))
+      if (flushed.didSave) await refreshPreviewFromSavedSource()
+    },
+
     async runMockCompile() {
       set({ compiling: true })
       const saveResult = await saveDirtyScriptsBeforeCompile()

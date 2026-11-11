@@ -531,6 +531,7 @@ function makeApi(overrides: Partial<WorkbenchApi> = {}): WorkbenchApi {
     }),
     applyTapirParameterEdits: async () => ({ ok: true, message: '参数已应用到 1 个对象' }),
     reloadTapirLibraries: async () => ({ ok: false, message: 'Archicad 未运行或 Tapir 未安装' }),
+    sendToArchicad: async () => ({ ok: false, message: 'not stubbed' }),
     updateLlmModel: async () => ({ ok: true }),
     updateLlmApiKey: async () => ({ ok: true }),
     updateSessionLlmModel: async () => ({ ok: true }),
@@ -4994,4 +4995,37 @@ test('unified source changed retries prepare at most once', async () => {
   store.setState({ flushDirtyScripts: async () => ({ ok: true, didSave: false }) })
   await store.getState().sendChat('加背板')
   expect(calls).toEqual(['prepare', 'execute', 'prepare', 'execute'])
+})
+
+
+test('sendToArchicad saves dirty scripts first, then reports the Archicad result', async () => {
+  const calls: string[] = []
+  const store = createStore(makeApi({
+    sendToArchicad: async () => {
+      calls.push('send')
+      return { ok: true, message: 'Objet envoyé dans Archicad (bibliothèque intégrée › MM STUDIO GDL/Shelf.gsm).' }
+    },
+  }))
+  store.setState({ flushDirtyScripts: async () => { calls.push('flush'); return { ok: true, didSave: false } } })
+  await store.getState().sendToArchicad()
+  expect(calls).toEqual(['flush', 'send'])
+  expect(store.getState().sendingToArchicad).toBe(false)
+  expect(store.getState().lastError).toBeNull()
+  expect(store.getState().compileLog[0]).toContain('MM STUDIO GDL/Shelf.gsm')
+})
+
+test('sendToArchicad surfaces a closed Archicad as an error and never sends unsaved drafts', async () => {
+  const closed = createStore(makeApi({
+    sendToArchicad: async () => ({ ok: false, message: "Archicad n'est pas ouvert, ou Tapir n'y est pas installé." }),
+  }))
+  closed.setState({ flushDirtyScripts: async () => ({ ok: true, didSave: false }) })
+  await closed.getState().sendToArchicad()
+  expect(closed.getState().lastError).toContain("Archicad n'est pas ouvert")
+
+  const send = vi.fn(async () => ({ ok: true }))
+  const unsaved = createStore(makeApi({ sendToArchicad: send }))
+  unsaved.setState({ flushDirtyScripts: async () => ({ ok: false, didSave: false, error: 'disk full' }) })
+  await unsaved.getState().sendToArchicad()
+  expect(send).not.toHaveBeenCalled()
+  expect(unsaved.getState().sendingToArchicad).toBe(false)
 })

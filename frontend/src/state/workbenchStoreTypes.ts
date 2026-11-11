@@ -130,6 +130,7 @@ export interface WorkbenchApi {
   chooseCompilerFile: () => Promise<FileChoiceResult>
   chooseOutputDirectory: () => Promise<DirectoryChoiceResult>
   compileProject: (outputDir?: string) => Promise<CompileResult>
+  sendToArchicad: (outputDir?: string) => Promise<import('../api/types').SendToArchicadResult>
   createProjectFromPrompt: (
     message: string,
     assistantSettings?: string,
@@ -316,6 +317,8 @@ export interface WorkbenchState {
   loading: boolean
   applying: boolean
   compiling: boolean
+  /** Envoi en cours vers l’Archicad ouvert (compilation + bibliothèque intégrée) */
+  sendingToArchicad: boolean
   /** SF1：短时源操作（Save/Save As/参数写入/Save Revision）重入保护；
    *  只表示前端操作期冻结，不是后端锁。期间编辑器/参数输入只读。 */
   sourceActionBusy: boolean
@@ -458,6 +461,7 @@ export interface WorkbenchState {
   loadTapirParameters: () => Promise<void>
   applyTapirParameters: () => Promise<void>
   compileCurrentProject: () => Promise<void>
+  sendToArchicad: () => Promise<void>
   setActiveRailPanel: (panel: '3d' | '2d' | 'inspect' | 'ai') => void
   loadAssistantHistory: () => Promise<void>
   clearAssistantHistory: () => Promise<void>

@@ -35,6 +35,22 @@ describe('TopMenu', () => {
     expect(screen.getByText('已保存 10:32')).toBeTruthy()
   })
 
+  test('send-to-Archicad button compiles and sends, and is locked while busy', () => {
+    const props = renderTopMenu({ onSendToArchicad: vi.fn() })
+    fireEvent.click(screen.getByTestId('send-to-archicad-button'))
+    expect(props.onSendToArchicad).toHaveBeenCalledTimes(1)
+  })
+
+  test('send-to-Archicad button is disabled without a saved project or while sending', () => {
+    renderTopMenu({ onSendToArchicad: vi.fn(), project: null })
+    expect((screen.getByTestId('send-to-archicad-button') as HTMLButtonElement).disabled).toBe(true)
+  })
+
+  test('send-to-Archicad button shows progress while sending', () => {
+    renderTopMenu({ onSendToArchicad: vi.fn(), sendingToArchicad: true })
+    expect((screen.getByTestId('send-to-archicad-button') as HTMLButtonElement).disabled).toBe(true)
+  })
+
   test('hides last saved pill when nothing has been saved yet', () => {
     renderTopMenu({ lastSavedAt: null })
 

@@ -6,6 +6,9 @@ export const zh = {
   // TopMenu
   'topMenu.save': '保存',
   'topMenu.compile': '编译',
+  'topMenu.sendToArchicad': '发送到 Archicad',
+  'topMenu.sendingToArchicad': '发送中…',
+  'topMenu.sendToArchicadTitle': '编译对象并加入 Archicad 当前项目的嵌入式图库（“MM STUDIO GDL”文件夹）',
   'topMenu.build': '构建',
   'topMenu.mockCompile': '模拟编译',
   'topMenu.settings': '设置',

@@ -147,7 +147,8 @@ class WorkbenchSession:
             get_bridge_fn=get_tapir_bridge_fn or default_bridge_fn,
             now_text_fn=now_text_fn or _now_text,
         )
-        self.tapir_service = WorkbenchTapirService(self.tapir)
+        self.tapir_service = WorkbenchTapirService(
+            self.tapir, compile_fn=lambda body: self.compile_project(body), project_name_fn=lambda: self.project.name if self.project else "")
         self.host_verification_service = HostVerificationService(self)
 
     @property
@@ -679,23 +680,8 @@ class WorkbenchSession:
         if route.startswith(("/api/settings/modeling-plugins", "/api/settings/modeling-tools")):
             return self.modeling_plugin_service.route(normalized_method, route, body)
 
-        if normalized_method == "GET" and route == "/api/tapir/status":
-            return self.tapir_service.status_response()
-
-        if normalized_method == "POST" and route == "/api/tapir/reload-libraries":
-            return self.tapir_service.reload_libraries()
-
-        if normalized_method == "POST" and route == "/api/tapir/selection/sync":
-            return self.tapir_service.sync_selection()
-
-        if normalized_method == "POST" and route == "/api/tapir/selection/highlight":
-            return self.tapir_service.highlight_selection()
-
-        if normalized_method == "POST" and route == "/api/tapir/parameters/load":
-            return self.tapir_service.load_selected_params()
-
-        if normalized_method == "POST" and route == "/api/tapir/parameters/apply":
-            return self.tapir_service.apply_param_edits(body)
+        if route.startswith("/api/tapir/"):
+            return self.tapir_service.route(normalized_method, route, body)
 
         if normalized_method == "POST" and route == "/api/preview":
             return self.preview(body)

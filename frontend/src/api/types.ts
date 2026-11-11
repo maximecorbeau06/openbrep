@@ -916,6 +916,13 @@ export interface TapirActionResult extends TapirStatusResult {
   message?: string
 }
 
+/** Envoi direct vers l'Archicad ouvert : compilation réelle + bibliothèque intégrée. */
+export interface SendToArchicadResult extends TapirActionResult {
+  compile?: { success?: boolean; mode?: string; output_path?: string | null }
+  library_path?: string
+  reloaded?: boolean
+}
+
 export interface LlmSettingsResult {
   ok: boolean
   llm?: LlmSettings

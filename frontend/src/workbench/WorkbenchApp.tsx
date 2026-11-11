@@ -63,6 +63,8 @@ export function WorkbenchApp() {
   const loading = useWorkbenchStore((state) => state.loading)
   const applying = useWorkbenchStore((state) => state.applying)
   const compiling = useWorkbenchStore((state) => state.compiling)
+  const sendingToArchicad = useWorkbenchStore((state) => state.sendingToArchicad)
+  const sendToArchicad = useWorkbenchStore((state) => state.sendToArchicad)
   const sourceActionBusy = useWorkbenchStore((state) => state.sourceActionBusy)
   const lastError = useWorkbenchStore((state) => state.lastError)
   const backendNotice = useWorkbenchStore((state) => state.backendNotice)
@@ -426,12 +428,14 @@ export function WorkbenchApp() {
         currentModel={llmSettings.model}
         onApply={() => void applyDraftParameters()}
         onCompile={() => void compileCurrentProject()}
+        onSendToArchicad={() => void sendToArchicad()}
         onMockCompile={() => void runMockCompile()}
         onSave={() => void saveCurrentProject()}
         onOpenSettings={() => { setSettingsInitialFocus(undefined); setSettingsOpen(true) }}
         applying={applying}
         loading={loading}
         compiling={compiling}
+        sendingToArchicad={sendingToArchicad}
         saving={scriptSaving}
         sourceBusy={sourceActionBusy}
         hasDirtyScript={hasAnyDirtyScript}
