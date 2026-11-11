@@ -55,6 +55,8 @@ hiddenimports = [
     *collect_submodules("openbrep"),
     *collect_submodules("litellm"),
     *collect_submodules("mcp"),
+    # Pont Tapir : sans ce paquet, toutes les fonctions Archicad sont inactives dans l'app.
+    *collect_submodules("archicad"),
     # tiktoken discovers encodings through the separately packaged
     # ``tiktoken_ext`` plugin namespace.  PyInstaller cannot reliably infer
     # this dynamic import, so keep the registry and OpenAI encodings in the

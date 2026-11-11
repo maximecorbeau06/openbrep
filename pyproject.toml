@@ -30,6 +30,9 @@ dependencies = [
     "Pillow>=10.0.0",
     "playwright>=1.40.0",
     "PyYAML>=6.0",
+    # API Python officielle Graphisoft : indispensable au pont Tapir (envoi vers Archicad,
+    # sélection, rechargement des bibliothèques) dans l'app installée.
+    "archicad>=27.0",
 ]
 
 [project.optional-dependencies]
