@@ -239,17 +239,44 @@ class TapirBridge:
             })
         return projects
 
-    def connect_port(self, port: int) -> bool:
-        """Se connecte à l'Archicad écoutant sur ``port`` (choisi par l'utilisateur)."""
+    def send_to_port(self, port: int, input_path: str, output_path: str,
+                     part_type: str = "Object") -> tuple[bool, str, bool]:
+        """Ajoute le fichier à la bibliothèque intégrée de l'Archicad du ``port`` puis recharge.
+
+        Connexion DÉDIÉE, jamais partagée : la connexion commune (self._conn) peut être
+        réinitialisée vers le premier Archicad trouvé par connect()/is_available()
+        (sondage d'état de l'interface), ce qui enverrait l'objet dans un autre projet.
+        Retourne (ajouté, erreur, rechargé).
+        """
         if not _AC_AVAILABLE:
-            self._last_connection_error = "Archicad Python API 未安装"
-            return False
+            return False, "Archicad Python API 未安装", False
         try:
-            self._conn = ACConnection.connect(int(port))
+            conn = ACConnection.connect(int(port))
         except Exception as exc:
-            self._conn = None
-            self._last_connection_error = str(exc)
-        return self._conn is not None
+            return False, str(exc), False
+        if conn is None:
+            return False, f"Aucun Archicad ne répond sur le port {port}", False
+
+        def call(name: str, params: dict):
+            return conn.commands.ExecuteAddOnCommand(conn.types.AddOnCommandId(self.TAPIR_ADDON_ID, name), params)
+
+        try:
+            raw = call("AddFilesToEmbeddedLibrary",
+                       {"files": [{"inputPath": input_path, "outputPath": output_path, "type": part_type}]})
+        except Exception as exc:
+            return False, str(exc), False
+        results = self._normalize_execution_results(raw)
+        if results and not all(r.get("success") is True for r in results):
+            error = next((r.get("error") for r in results if r.get("success") is not True), None)
+            if isinstance(error, dict):
+                error = error.get("message") or str(error)
+            return False, str(error or "Archicad a refusé le fichier"), False
+        try:
+            call("ReloadLibraries", {})
+            reloaded = True
+        except Exception:
+            reloaded = False
+        return True, "", reloaded
 
     def is_available(self) -> bool:
         """检查 Archicad + Tapir 是否可用。"""
@@ -295,27 +322,6 @@ class TapirBridge:
         except Exception as e:
             print(f"[TapirBridge] ReloadLibraries 失败: {e}")
             return False
-
-    def add_to_embedded_library(self, input_path: str, output_path: str, part_type: str = "Object") -> tuple[bool, str]:
-        """Copie un fichier (.gsm) dans la bibliothèque intégrée du projet ouvert.
-
-        ``output_path`` est relatif à la bibliothèque intégrée (ex. « MM STUDIO GDL/Table.gsm »).
-        Retourne (succès, message d'erreur éventuel).
-        """
-        try:
-            raw = self._tapir_call(
-                "AddFilesToEmbeddedLibrary",
-                {"files": [{"inputPath": input_path, "outputPath": output_path, "type": part_type}]},
-            )
-        except Exception as exc:
-            return False, str(exc)
-        results = self._normalize_execution_results(raw)
-        if results and not all(r.get("success") is True for r in results):
-            error = next((r.get("error") for r in results if r.get("success") is not True), None)
-            if isinstance(error, dict):
-                error = error.get("message") or str(error)
-            return False, str(error or "Archicad a refusé le fichier")
-        return True, ""
 
     def capture_errors(self, timeout: float = 6.0) -> list[GDLError]:
         """

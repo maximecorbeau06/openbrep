@@ -4936,11 +4936,7 @@ class _SendBridge:
         self.projects = [{"port": 19725, "project_name": "Projet test", "untitled": False}] if projects is None else projects
 
     def list_open_projects(self):
-        return list(self.projects)
-
-    def connect_port(self, port):
-        self.ports.append(port)
-        return True
+        return list(self.projects) if self.available else []
 
     def is_available(self):
         return self.available
@@ -4948,12 +4944,12 @@ class _SendBridge:
     def get_status(self):
         return {"archicad_connected": self.available, "tapir_available": self.available, "version": "27"}
 
-    def add_to_embedded_library(self, input_path, output_path):
+    def send_to_port(self, port, input_path, output_path):
+        self.ports.append(port)
+        if not self.add_ok:
+            return False, "file exists", False
         self.added.append((input_path, output_path))
-        return (True, "") if self.add_ok else (False, "file exists")
-
-    def reload_libraries(self):
-        return self.reload_ok
+        return True, "", self.reload_ok
 
 
 def test_send_to_archicad_compiles_for_real_then_adds_and_reloads(tmp_path):
@@ -5008,7 +5004,7 @@ def test_send_to_archicad_stops_when_compile_fails_or_is_simulated(tmp_path):
 def test_send_to_archicad_explains_when_archicad_is_closed_or_refuses(tmp_path):
     closed, _ = _send_session(tmp_path, _SendBridge(available=False))
     response = closed.route("POST", "/api/tapir/send-to-archicad", {})
-    assert response["ok"] is False and "Archicad n'est pas ouvert" in response["message"]
+    assert response["ok"] is False and "Aucun projet Archicad ouvert" in response["message"]
 
     refused, _ = _send_session(tmp_path, _SendBridge(add_ok=False))
     response = refused.route("POST", "/api/tapir/send-to-archicad", {})

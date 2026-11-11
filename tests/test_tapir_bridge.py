@@ -135,39 +135,45 @@ def test_connect_scans_archicad_ports_instead_of_consuming_workbench_port(monkey
     assert calls == [("scan",), ("connect", 19723)]
 
 
-def test_add_to_embedded_library_sends_tapir_file_addition():
+def test_send_to_port_uses_a_dedicated_connection_to_the_chosen_port(monkeypatch):
+    """Régression 11/11/2026 : la connexion partagée pointait sur le projet client
+    (19723) ; l'envoi doit partir UNIQUEMENT vers le port choisi (19725)."""
+    import openbrep.tapir_bridge as tb
     calls = []
 
-    class FakeCommands:
-        def ExecuteAddOnCommand(self, command_id, parameters):
-            calls.append((command_id, parameters))
-            return {"executionResults": [{"success": True}]}
+    class FakeConn:
+        def __init__(self, port):
+            self.port = port
+            self.types = SimpleNamespace(AddOnCommandId=lambda namespace, name: (namespace, name))
+            self.commands = SimpleNamespace(ExecuteAddOnCommand=self._run)
 
-    bridge = TapirBridge()
-    bridge._conn = SimpleNamespace(
-        types=SimpleNamespace(AddOnCommandId=lambda namespace, name: (namespace, name)),
-        commands=FakeCommands(),
-    )
+        def _run(self, command_id, params):
+            calls.append((self.port, command_id[1], params))
+            return {"executionResults": [{"success": True}]} if command_id[1] == "AddFilesToEmbeddedLibrary" else {}
 
-    ok, error = bridge.add_to_embedded_library("/tmp/Table.gsm", "MM STUDIO GDL/Table.gsm")
+    monkeypatch.setattr(tb, "_AC_AVAILABLE", True)
+    monkeypatch.setattr(tb, "ACConnection", SimpleNamespace(connect=lambda port: FakeConn(port)))
+    bridge = tb.TapirBridge()
+    bridge._conn = FakeConn(19723)  # connexion partagée sur le projet client
 
-    assert (ok, error) == (True, "")
-    assert calls[0][0][1] == "AddFilesToEmbeddedLibrary"
-    assert calls[0][1] == {"files": [{"inputPath": "/tmp/Table.gsm", "outputPath": "MM STUDIO GDL/Table.gsm", "type": "Object"}]}
+    ok, error, reloaded = bridge.send_to_port(19725, "/tmp/Table.gsm", "MM STUDIO GDL/Table.gsm")
+
+    assert (ok, error, reloaded) == (True, "", True)
+    assert [(port, name) for port, name, _ in calls] == [(19725, "AddFilesToEmbeddedLibrary"), (19725, "ReloadLibraries")]
+    assert calls[0][2] == {"files": [{"inputPath": "/tmp/Table.gsm", "outputPath": "MM STUDIO GDL/Table.gsm", "type": "Object"}]}
 
 
-def test_add_to_embedded_library_reports_archicad_refusal():
-    class FakeCommands:
-        def ExecuteAddOnCommand(self, command_id, parameters):
-            return {"executionResults": [{"success": False, "error": {"message": "file exists"}}]}
+def test_send_to_port_reports_archicad_refusal(monkeypatch):
+    import openbrep.tapir_bridge as tb
 
-    bridge = TapirBridge()
-    bridge._conn = SimpleNamespace(
-        types=SimpleNamespace(AddOnCommandId=lambda namespace, name: (namespace, name)),
-        commands=FakeCommands(),
-    )
+    class FakeConn:
+        types = SimpleNamespace(AddOnCommandId=lambda namespace, name: (namespace, name))
+        commands = SimpleNamespace(ExecuteAddOnCommand=lambda command_id, params: {
+            "executionResults": [{"success": False, "error": {"message": "file exists"}}]})
 
-    assert bridge.add_to_embedded_library("/tmp/a.gsm", "MM STUDIO GDL/a.gsm") == (False, "file exists")
+    monkeypatch.setattr(tb, "_AC_AVAILABLE", True)
+    monkeypatch.setattr(tb, "ACConnection", SimpleNamespace(connect=lambda port: FakeConn()))
+    assert tb.TapirBridge().send_to_port(19725, "/tmp/a.gsm", "MM STUDIO GDL/a.gsm") == (False, "file exists", False)
 
 
 def test_list_open_projects_reads_project_names_per_port(monkeypatch):

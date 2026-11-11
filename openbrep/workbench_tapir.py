@@ -97,22 +97,22 @@ class WorkbenchTapirAdapter:
 
     def send_library_part(self, gsm_path: str, object_name: str, *, port: int | None = None,
                           project_name: str = "") -> dict[str, Any]:
-        """Dépose le .gsm compilé dans la bibliothèque intégrée d'Archicad puis recharge."""
+        """Dépose le .gsm compilé dans la bibliothèque intégrée d'Archicad puis recharge.
+
+        Avec ``port`` : tout passe par une connexion dédiée à ce port (send_to_port) —
+        jamais par la connexion partagée, qui peut revenir au premier Archicad trouvé
+        (incident du 11/11/2026 : objet parti dans un projet client au lieu du projet choisi).
+        """
         if not self.tapir_import_ok or self.get_bridge_fn is None:
             return self._action(False, "Le module Tapir n'est pas disponible dans l'app.")
+        if port is None:
+            return self._action(False, "Aucun projet Archicad choisi.")
         bridge = self.get_bridge_fn()
-        if port is not None and not bridge.connect_port(port):
-            self.state.tapir_last_error = "Le projet Archicad choisi ne répond plus : vérifie qu'il est toujours ouvert."
-            return self._action(False, self.state.tapir_last_error)
-        if not bridge.is_available():
-            self.state.tapir_last_error = "Archicad n'est pas ouvert, ou Tapir n'y est pas installé."
-            return self._action(False, self.state.tapir_last_error)
         target = f"{EMBEDDED_LIBRARY_FOLDER}/{_library_file_name(object_name)}.gsm"
-        ok, error = bridge.add_to_embedded_library(gsm_path, target)
+        ok, error, reloaded = bridge.send_to_port(int(port), gsm_path, target)
         if not ok:
-            self.state.tapir_last_error = f"Archicad a refusé l'objet : {error}"
+            self.state.tapir_last_error = f"Envoi refusé par Archicad : {error}"
             return self._action(False, self.state.tapir_last_error)
-        reloaded = bool(bridge.reload_libraries())
         self.state.tapir_last_error = ""
         where = f"« {project_name} »" if project_name else "Archicad"
         message = (
