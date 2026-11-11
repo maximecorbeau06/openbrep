@@ -50,6 +50,10 @@ datas += collect_data_files("openbrep")
 datas += collect_data_files("litellm")
 datas += copy_metadata("litellm")
 datas += copy_metadata("mcp")
+# archicad.versioning liste archicad/releases/ sur le disque (os.scandir) pour choisir
+# la version d'Archicad : les modules seuls (dans l'archive PYZ) ne suffisent pas,
+# il faut aussi les fichiers sources, sinon chaque connexion échoue (FileNotFoundError).
+datas += collect_data_files("archicad", include_py_files=True)
 
 hiddenimports = [
     *collect_submodules("openbrep"),

@@ -9,3 +9,5 @@ def test_archicad_api_is_a_runtime_dependency_and_bundled():
     spec = Path("openbrep-backend.spec").read_text(encoding="utf-8")
     assert '"archicad>=' in pyproject
     assert 'collect_submodules("archicad")' in spec
+    # versioning.discover() parcourt archicad/releases/ sur le disque
+    assert 'collect_data_files("archicad", include_py_files=True)' in spec
